@@ -396,6 +396,23 @@ MiscTab:CreateButton({
    end,
 })
 MiscTab:CreateButton({
+   Name = "Disable Local AC",
+   Callback = function()
+       local commonAC = {"Adonis", "AntiCheat", "AC", "Watcher", "Handler", "Guard"}
+       for _, v in pairs(game:GetDescendants()) do
+           if v:IsA("LocalScript") then
+               for _, name in pairs(commonAC) do
+                   if v.Name:find(name) then
+                       v.Disabled = true
+                   end
+               end
+           end
+       end
+       Rayfield:Notify({Title = "Local AC", Content = "Attempted to disable common Local AC scripts", Duration = 5})
+   end,
+})
+
+MiscTab:CreateButton({
    Name = "Anti-AFK",
    Callback = function()
        local VirtualUser = game:GetService("VirtualUser")
@@ -662,11 +679,12 @@ RunService.Stepped:Connect(function()
         local root = LocalPlayer.Character.HumanoidRootPart
         local hum = LocalPlayer.Character.Humanoid
 
-        -- WalkSpeed Bypass (CFrame Delta)
+        -- WalkSpeed Bypass (Network-Safe Velocity Delta)
         if MovementSettings.WalkSpeed > 16 and not MovementSettings.Fly then
             local moveDir = hum.MoveDirection
             if moveDir.Magnitude > 0 then
-                root.CFrame = root.CFrame + (moveDir * (MovementSettings.WalkSpeed / 100))
+                local vel = moveDir * (MovementSettings.WalkSpeed)
+                root.Velocity = Vector3.new(vel.X, root.Velocity.Y, vel.Z)
             end
         end
 
@@ -784,16 +802,39 @@ UserInputService.InputBegan:Connect(function(input, processed)
 end)
 
 -- Anti-Cheat Protection (Generic)
+-- ULTIMATE ANTI-KICK & BYPASS
+local oldKick
+oldKick = hookfunction(game.Players.LocalPlayer.Kick, function(self, ...)
+    print("Blocked Kick: ", ...)
+    return nil
+end)
+
 local oldNamecall
 oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
     local method = getnamecallmethod()
     local args = {...}
-    if not checkcaller() and method == "FireServer" then
-        if self.Name:lower():find("ban") or self.Name:lower():find("kick") or self.Name:lower():find("cheat") or self.Name:lower():find("anticheat") then
-            return nil -- Block potential report/kick remotes
+    if not checkcaller() then
+        if method == "FireServer" or method == "InvokeServer" then
+            local name = self.Name:lower()
+            -- Block common AC remotes
+            if name:find("kick") or name:find("ban") or name:find("cheat") or name:find("check") or name:find("anticheat") or name:find("update") or name:find("report") then
+                return nil
+            end
         end
     end
     return oldNamecall(self, ...)
+end)
+
+-- Prevent client-side script manipulation of the character that might lead to kicks
+local oldIndex
+oldIndex = hookmetamethod(game, "__index", function(self, idx)
+    if not checkcaller() and idx == "WalkSpeed" and self:IsA("Humanoid") then
+        return 16
+    end
+    if not checkcaller() and idx == "JumpPower" and self:IsA("Humanoid") then
+        return 50
+    end
+    return oldIndex(self, idx)
 end)
 
 Rayfield:Notify({Title = "Script Loaded", Content = "Army RP Script Ready with Bypasses!", Duration = 5})
