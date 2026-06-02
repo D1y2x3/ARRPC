@@ -10,6 +10,7 @@ local Lighting = game:GetService("Lighting")
 local HttpService = game:GetService("HttpService")
 local TeleportService = game:GetService("TeleportService")
 local TweenService = game:GetService("TweenService")
+local VirtualUser = game:GetService("VirtualUser")
 
 -- // CONFIGURATION
 local Config = {
@@ -55,7 +56,8 @@ local Config = {
         HitboxSize = 2
     },
     Teleport = {
-        SafeMode = true
+        SafeMode = true,
+        ClickTP = false
     }
 }
 
@@ -177,8 +179,8 @@ end
 
 -- // WINDOW SETUP
 local Window = Rayfield:CreateWindow({
-    Name = "Army RP | Ultimate V4",
-    LoadingTitle = "Army RP Optimized",
+    Name = "Army RP | Ultimate V4 COMPLETE",
+    LoadingTitle = "Army RP Premium",
     LoadingSubtitle = "by Jules",
     Theme = "DarkBlue",
     ConfigurationSaving = { Enabled = false }
@@ -218,6 +220,10 @@ CombatTab:CreateToggle({
     Name = "No Recoil/Spread",
     Callback = function(v) Config.Weapon.NoRecoil = v; Config.Weapon.NoSpread = v end
 })
+CombatTab:CreateToggle({
+    Name = "Infinite Ammo",
+    Callback = function(v) Config.Weapon.InfAmmo = v end
+})
 
 -- // VISUALS
 VisualsTab:CreateToggle({
@@ -243,6 +249,20 @@ VisualsTab:CreateToggle({
 VisualsTab:CreateToggle({
     Name = "Tracers",
     Callback = function(v) Config.Visuals.Tracers = v end
+})
+VisualsTab:CreateSection("World")
+VisualsTab:CreateToggle({
+    Name = "Fullbright",
+    Callback = function(v)
+        Config.Visuals.Fullbright = v
+        if v then
+            Lighting.Brightness = 2
+            Lighting.ClockTime = 14
+            Lighting.FogEnd = 100000
+            Lighting.GlobalShadows = false
+            Lighting.OutdoorAmbient = Color3.fromRGB(128, 128, 128)
+        end
+    end,
 })
 
 -- // MOVEMENT
@@ -280,8 +300,13 @@ MovementTab:CreateToggle({
     Name = "No Fall Damage",
     Callback = function(v) Config.Movement.NoFall = v end
 })
+MovementTab:CreateToggle({
+    Name = "Infinite Stamina",
+    Callback = function(v) Config.Movement.InfStamina = v end
+})
 
 -- // TELEPORTS
+TeleportTab:CreateSection("Static Locations")
 local LocationDropdown = TeleportTab:CreateDropdown({
     Name = "Locations",
     Options = {"Base", "Border", "Village", "Bandits"},
@@ -328,7 +353,14 @@ TeleportTab:CreateButton({
     end
 })
 
+TeleportTab:CreateSection("Click TP")
+TeleportTab:CreateToggle({
+    Name = "Ctrl + Click Teleport",
+    Callback = function(v) Config.Teleport.ClickTP = v end
+})
+
 -- // MISC
+MiscTab:CreateSection("Exploits")
 MiscTab:CreateButton({
     Name = "Instant Interact (E)",
     Callback = function()
@@ -358,32 +390,57 @@ MiscTab:CreateButton({
        for _, v in pairs(game:GetDescendants()) do
            if v:IsA("LocalScript") then
                for _, name in pairs(commonAC) do
-                   if v.Name:find(name) then
-                       v.Disabled = true
-                   end
+                   if v.Name:find(name) then v.Disabled = true end
                end
            end
        end
-       Rayfield:Notify({Title = "Local AC", Content = "Attempted to disable common Local AC scripts", Duration = 5})
+       Rayfield:Notify({Title = "Local AC", Content = "Attempted to disable AC scripts", Duration = 5})
    end,
+})
+
+MiscTab:CreateSection("Utilities")
+MiscTab:CreateButton({
+    Name = "Anti-AFK",
+    Callback = function()
+        LocalPlayer.Idled:Connect(function()
+            VirtualUser:CaptureController()
+            VirtualUser:ClickButton2(Vector2.new())
+        end)
+        Rayfield:Notify({Title = "Utility", Content = "Anti-AFK Active", Duration = 5})
+    end,
+})
+MiscTab:CreateButton({
+    Name = "Server Hopper",
+    Callback = function()
+        local Servers = HttpService:JSONDecode(game:HttpGet("https://games.roblox.com/v1/games/" .. game.PlaceId .. "/servers/Public?sortOrder=Asc&limit=100"))
+        for _, s in pairs(Servers.data) do
+            if s.playing < s.maxPlayers and s.id ~= game.JobId then
+                TeleportService:TeleportToPlaceInstance(game.PlaceId, s.id)
+                break
+            end
+        end
+    end,
+})
+MiscTab:CreateButton({
+    Name = "Infinite Yield",
+    Callback = function()
+        loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))()
+    end,
 })
 
 -- // MAIN LOOPS
 RunService.RenderStepped:Connect(function()
-    -- // Aimbot Key Check
+    -- Aimbot Key Check
     Config.Aimbot.Active = UserInputService:IsKeyDown(Config.Aimbot.Keybind)
-
     if Config.Aimbot.Enabled and Config.Aimbot.Active then
         local target = GetClosestPlayer(Config.Aimbot.FOV, Config.Aimbot.TargetPart)
         if target and target.Character then
             local part = target.Character:FindFirstChild(Config.Aimbot.TargetPart)
-            if part then
-                Camera.CFrame = CFrame.new(Camera.CFrame.Position, part.Position)
-            end
+            if part then Camera.CFrame = CFrame.new(Camera.CFrame.Position, part.Position) end
         end
     end
 
-    -- // Visuals Update
+    -- Visuals Update
     for plr, obs in pairs(ESP_Objects) do
         local char = plr.Character
         local root = char and char:FindFirstChild("HumanoidRootPart")
@@ -400,15 +457,9 @@ RunService.RenderStepped:Connect(function()
                 local x, y = pos.X - w/2, headPos.Y
                 local col = (Config.Visuals.TeamCheck and plr.TeamColor.Color) or Color3.fromRGB(255, 0, 0)
 
-                -- Box
                 obs.Box.Visible = Config.Visuals.Boxes
-                if obs.Box.Visible then
-                    obs.Box.Size = Vector2.new(w, h)
-                    obs.Box.Position = Vector2.new(x, y)
-                    obs.Box.Color = col
-                end
+                if obs.Box.Visible then obs.Box.Size = Vector2.new(w, h); obs.Box.Position = Vector2.new(x, y); obs.Box.Color = col end
 
-                -- Corners
                 local showCorners = Config.Visuals.Corners
                 for _, l in pairs(obs.Corners) do l.Visible = showCorners end
                 if showCorners then
@@ -424,7 +475,6 @@ RunService.RenderStepped:Connect(function()
                     for _, c in pairs(obs.Corners) do c.Color = col end
                 end
 
-                -- Health
                 obs.Health.Visible = Config.Visuals.Health
                 obs.HealthOutline.Visible = Config.Visuals.Health
                 if obs.Health.Visible then
@@ -434,32 +484,16 @@ RunService.RenderStepped:Connect(function()
                     obs.Health.Color = Color3.fromHSV(math.clamp(hum.Health/hum.MaxHealth, 0, 1) * 0.4, 1, 1)
                 end
 
-                -- Name & Distance
                 obs.Name.Visible = Config.Visuals.Names
-                if obs.Name.Visible then
-                    obs.Name.Text = plr.Name
-                    obs.Name.Position = Vector2.new(pos.X, y - 20)
-                end
+                if obs.Name.Visible then obs.Name.Text = plr.Name; obs.Name.Position = Vector2.new(pos.X, y - 20) end
 
                 obs.Dist.Visible = Config.Visuals.Distance
-                if obs.Dist.Visible then
-                    obs.Dist.Text = math.floor((Camera.CFrame.Position - root.Position).Magnitude) .. "m"
-                    obs.Dist.Position = Vector2.new(pos.X, y + h + 5)
-                end
+                if obs.Dist.Visible then obs.Dist.Text = math.floor((Camera.CFrame.Position - root.Position).Magnitude) .. "m"; obs.Dist.Position = Vector2.new(pos.X, y + h + 5) end
 
-                -- Tracer
                 obs.Tracer.Visible = Config.Visuals.Tracers
-                if obs.Tracer.Visible then
-                    obs.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
-                    obs.Tracer.To = Vector2.new(pos.X, legPos.Y)
-                    obs.Tracer.Color = col
-                end
-            else
-                for _, o in pairs(obs) do if typeof(o) == "table" then for _, s in pairs(o) do s.Visible = false end else o.Visible = false end end
-            end
-        else
-            for _, o in pairs(obs) do if typeof(o) == "table" then for _, s in pairs(o) do s.Visible = false end else o.Visible = false end end
-        end
+                if obs.Tracer.Visible then obs.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y); obs.Tracer.To = Vector2.new(pos.X, legPos.Y); obs.Tracer.Color = col end
+            else for _, o in pairs(obs) do if typeof(o) == "table" then for _, s in pairs(o) do s.Visible = false end else o.Visible = false end end end
+        else for _, o in pairs(obs) do if typeof(o) == "table" then for _, s in pairs(o) do s.Visible = false end else o.Visible = false end end end
     end
 end)
 
@@ -473,40 +507,24 @@ RunService.Stepped:Connect(function()
         if Config.Movement.WalkSpeed > 16 and not Config.Movement.Fly then
             root.Velocity = Vector3.new(hum.MoveDirection.X * Config.Movement.WalkSpeed, root.Velocity.Y, hum.MoveDirection.Z * Config.Movement.WalkSpeed)
         end
-
         -- Stamina
         if Config.Movement.InfStamina then
-            local s = LocalPlayer.Character:FindFirstChild("Stamina") or LocalPlayer:FindFirstChild("Stamina")
+            local s = char:FindFirstChild("Stamina") or LocalPlayer:FindFirstChild("Stamina")
             if s and s:IsA("ValueBase") then s.Value = 100 end
         end
-
         -- No Fall
         if Config.Movement.NoFall then
-            if hum:GetState() == Enum.HumanoidStateType.FallingDown or hum:GetState() == Enum.HumanoidStateType.Freefall then
-                hum:ChangeState(Enum.HumanoidStateType.Running)
-            end
+            if hum:GetState() == Enum.HumanoidStateType.FallingDown or hum:GetState() == Enum.HumanoidStateType.Freefall then hum:ChangeState(Enum.HumanoidStateType.Running) end
         end
-
         -- Spinbot
-        if Config.Movement.Spinbot then
-            root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(20), 0)
-        end
-
+        if Config.Movement.Spinbot then root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(20), 0) end
         -- Noclip
         if Config.Movement.Noclip then
-            for _, v in pairs(char:GetDescendants()) do
-                if v:IsA("BasePart") then
-                    if not Original_Collisions[v] then Original_Collisions[v] = v.CanCollide end
-                    v.CanCollide = false
-                end
-            end
+            for _, v in pairs(char:GetDescendants()) do if v:IsA("BasePart") then if not Original_Collisions[v] then Original_Collisions[v] = v.CanCollide end; v.CanCollide = false end end
         else
-            for v, state in pairs(Original_Collisions) do
-                if v and v.Parent then v.CanCollide = state end
-            end
+            for v, state in pairs(Original_Collisions) do if v and v.Parent then v.CanCollide = state end end
             table.clear(Original_Collisions)
         end
-
         -- Fly
         if Config.Movement.Fly then
             hum.PlatformStand = true
@@ -519,16 +537,12 @@ RunService.Stepped:Connect(function()
             if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then m = m - Vector3.new(0,1,0) end
             root.Velocity = Vector3.new(0, 0.1, 0)
             root.CFrame = root.CFrame + (m * (Config.Movement.FlySpeed/50))
-        else
-            if hum.PlatformStand then hum.PlatformStand = false end
-        end
-
-        -- Vehicle Fly/Speed
+        else if hum.PlatformStand then hum.PlatformStand = false end end
+        -- Vehicle
         local seat = hum.SeatPart
         if seat and seat:IsA("VehicleSeat") then
             if Config.Movement.Fly then
-                vGyro.Parent = seat; vVelocity.Parent = seat
-                vGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9); vGyro.CFrame = Camera.CFrame
+                vGyro.Parent = seat; vVelocity.Parent = seat; vGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9); vGyro.CFrame = Camera.CFrame
                 local m = Vector3.new(0,0,0)
                 if UserInputService:IsKeyDown(Enum.KeyCode.W) then m = m + Camera.CFrame.LookVector end
                 if UserInputService:IsKeyDown(Enum.KeyCode.S) then m = m - Camera.CFrame.LookVector end
@@ -537,22 +551,14 @@ RunService.Stepped:Connect(function()
                 vGyro.Parent = nil; vVelocity.Parent = nil
                 if seat.Throttle ~= 0 then seat.Velocity = seat.CFrame.LookVector * Config.Movement.FlySpeed * seat.Throttle end
             end
-        else
-            vGyro.Parent = nil; vVelocity.Parent = nil
-        end
-
-        -- Hitbox (Throttled)
+        else vGyro.Parent = nil; vVelocity.Parent = nil end
+        -- Hitbox
         if tick() % 1 < 0.1 then
             for _, p in pairs(Players:GetPlayers()) do
                 if p ~= LocalPlayer and p.Character then
-                    local parts = {"Head", "UpperTorso", "LowerTorso", "Torso", "HumanoidRootPart"}
-                    for _, name in pairs(parts) do
+                    for _, name in pairs({"Head", "UpperTorso", "LowerTorso", "Torso", "HumanoidRootPart"}) do
                         local target = p.Character:FindFirstChild(name)
-                        if target then
-                            target.Size = Vector3.new(Config.Weapon.HitboxSize, Config.Weapon.HitboxSize, Config.Weapon.HitboxSize)
-                            target.Transparency = Config.Weapon.HitboxSize > 2 and 0.5 or 0
-                            target.CanCollide = false
-                        end
+                        if target then target.Size = Vector3.new(Config.Weapon.HitboxSize, Config.Weapon.HitboxSize, Config.Weapon.HitboxSize); target.Transparency = Config.Weapon.HitboxSize > 2 and 0.5 or 0; target.CanCollide = false end
                     end
                 end
             end
@@ -571,6 +577,14 @@ UserInputService.JumpRequest:Connect(function()
     end
 end)
 
+UserInputService.InputBegan:Connect(function(input, processed)
+    if not processed and Config.Teleport.ClickTP and input.UserInputType == Enum.UserInputType.MouseButton1 and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
+        local ray = Camera:ViewportPointToRay(UserInputService:GetMouseLocation().X, UserInputService:GetMouseLocation().Y)
+        local res = workspace:Raycast(ray.Origin, ray.Direction * 1000)
+        if res then SafeTeleport(res.Position + Vector3.new(0, 3, 0)) end
+    end
+end)
+
 -- // ADVANCED BYPASS & HOOKS
 local mt = getrawmetatable(game)
 local oldNamecall = mt.__namecall
@@ -583,13 +597,10 @@ mt.__namecall = newcclosure(function(self, ...)
     if not checkcaller() then
         if method == "FireServer" then
             if self.Name:lower():find("kick") or self.Name:lower():find("ban") or self.Name:lower():find("check") then return end
-            -- Silent Aim Logic
             if Config.SilentAim.Enabled and (self.Name:lower():find("shoot") or self.Name:lower():find("fire")) then
                 local target = GetClosestPlayer(Config.SilentAim.FOV, Config.SilentAim.TargetPart)
                 if target then
-                    for i, arg in pairs(args) do
-                        if typeof(arg) == "Vector3" then args[i] = target.Character[Config.SilentAim.TargetPart].Position end
-                    end
+                    for i, arg in pairs(args) do if typeof(arg) == "Vector3" then args[i] = target.Character[Config.SilentAim.TargetPart].Position end end
                     return oldNamecall(self, unpack(args))
                 end
             end
@@ -610,7 +621,6 @@ mt.__index = newcclosure(function(self, idx)
     return oldIndex(self, idx)
 end)
 setreadonly(mt, true)
-
 hookfunction(LocalPlayer.Kick, function() return end)
 
-Rayfield:Notify({Title = "Loaded", Content = "Army RP Ultimate Ready."})
+Rayfield:Notify({Title = "Complete", Content = "Script fully restored and optimized."})
