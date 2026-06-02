@@ -313,8 +313,8 @@ PlayerTab:CreateButton({
    Name = "Teleport to Location",
    Callback = function()
       local loc = LocationDropdown.CurrentValue
-      if TPLocations[loc] and LocalPlayer.Character then
-          LocalPlayer.Character:SetPrimaryPartCFrame(CFrame.new(TPLocations[loc]))
+      if TPLocations[loc] then
+          SafeTeleport(TPLocations[loc])
       end
    end,
 })
@@ -326,6 +326,23 @@ local PlayerDropdown = PlayerTab:CreateDropdown({
    CurrentValue = "",
    Callback = function(Value) end,
 })
+local function SafeTeleport(targetPos)
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+    local root = LocalPlayer.Character.HumanoidRootPart
+    local currentPos = root.Position
+    local distance = (targetPos - currentPos).Magnitude
+
+    if distance > 100 then
+        local steps = math.floor(distance / 50)
+        for i = 1, steps do
+            if not LocalPlayer.Character then break end
+            root.CFrame = CFrame.new(currentPos:Lerp(targetPos, i/steps))
+            task.wait(0.05)
+        end
+    end
+    root.CFrame = CFrame.new(targetPos)
+end
+
 local function UpdatePlayerDropdown()
     local plrs = {}
     for _, v in pairs(Players:GetPlayers()) do
@@ -342,8 +359,8 @@ PlayerTab:CreateButton({
    Callback = function()
       local targetName = PlayerDropdown.CurrentValue
       local target = Players:FindFirstChild(targetName)
-      if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") and LocalPlayer.Character then
-          LocalPlayer.Character:SetPrimaryPartCFrame(target.Character.HumanoidRootPart.CFrame)
+      if target and target.Character and target.Character:FindFirstChild("HumanoidRootPart") then
+          SafeTeleport(target.Character.HumanoidRootPart.Position)
       end
    end,
 })
@@ -641,9 +658,21 @@ RunService.RenderStepped:Connect(function()
 end)
 
 RunService.Stepped:Connect(function()
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid.WalkSpeed = MovementSettings.WalkSpeed
-        LocalPlayer.Character.Humanoid.JumpPower = MovementSettings.JumpPower
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        local root = LocalPlayer.Character.HumanoidRootPart
+        local hum = LocalPlayer.Character.Humanoid
+
+        -- WalkSpeed Bypass (CFrame Delta)
+        if MovementSettings.WalkSpeed > 16 and not MovementSettings.Fly then
+            local moveDir = hum.MoveDirection
+            if moveDir.Magnitude > 0 then
+                root.CFrame = root.CFrame + (moveDir * (MovementSettings.WalkSpeed / 100))
+            end
+        end
+
+        -- Reset to normal to avoid property detection
+        hum.WalkSpeed = 16
+        hum.JumpPower = MovementSettings.JumpPower
 
         if MovementSettings.Noclip then
             for _, v in pairs(LocalPlayer.Character:GetDescendants()) do
@@ -681,7 +710,7 @@ RunService.Stepped:Connect(function()
         if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0,1,0) end
         if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0,1,0) end
 
-        root.Velocity = Vector3.new(0,0,0)
+        root.Velocity = Vector3.new(0, 0.05, 0) -- Spoof small velocity to stay active
         root.CFrame = root.CFrame + (moveDir * (MovementSettings.FlySpeed / 50))
     elseif LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.PlatformStand = false
@@ -741,8 +770,8 @@ end)
 setreadonly(mt, true)
 
 UserInputService.JumpRequest:Connect(function()
-    if MovementSettings.InfJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
-        LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    if MovementSettings.InfJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(LocalPlayer.Character.HumanoidRootPart.Velocity.X, MovementSettings.JumpPower, LocalPlayer.Character.HumanoidRootPart.Velocity.Z)
     end
 end)
 
@@ -754,4 +783,17 @@ UserInputService.InputBegan:Connect(function(input, processed)
     end
 end)
 
-Rayfield:Notify({Title = "Script Loaded", Content = "Army RP Script Ready!", Duration = 5})
+-- Anti-Cheat Protection (Generic)
+local oldNamecall
+oldNamecall = hookmetamethod(game, "__namecall", function(self, ...)
+    local method = getnamecallmethod()
+    local args = {...}
+    if not checkcaller() and method == "FireServer" then
+        if self.Name:lower():find("ban") or self.Name:lower():find("kick") or self.Name:lower():find("cheat") or self.Name:lower():find("anticheat") then
+            return nil -- Block potential report/kick remotes
+        end
+    end
+    return oldNamecall(self, ...)
+end)
+
+Rayfield:Notify({Title = "Script Loaded", Content = "Army RP Script Ready with Bypasses!", Duration = 5})
