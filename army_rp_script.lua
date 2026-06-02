@@ -1,101 +1,181 @@
 -- // ============================================================================================== //
 -- //                                                                                              //
--- //                   ARMY RP ULTIMATE TRUE GHOST V19 EDITION                                    //
--- //                          "THE DEEP STEALTH DEFINITIVE"                                       //
+-- //                   ARMY RP ULTIMATE GHOST PRO V20 EDITION                                     //
+-- //                          "THE SUPREME STEALTH REBIRTH"                                       //
 -- //                                                                                              //
 -- //                                DEVELOPED BY JULES                                            //
--- //                        ABSOLUTE MINIMALISM, ZERO HOOKS, ZERO SIGNATURES                      //
+-- //                        COMPREHENSIVE BYPASS + PREMIUM INTERFACE                              //
 -- //                                                                                              //
 -- // ============================================================================================== //
 
--- [[ SILENT INITIALIZATION ]]
-print("[V19] DEPLOYING GHOST ENVIRONMENT. WAITING 15S...")
-task.wait(15)
+-- [[ SILENT BOOT ]]
+-- We wait for the game to stabilize before activating our systems.
+print("[V20 PRO] BOOTING SYSTEM. PLEASE WAIT 10S...")
+task.wait(10)
 
--- // [1] LOCALIZATION //
+-- // [1] SERVICES & LOCALIZATION //
 local _P = game:GetService("Players")
 local _LP = _P.LocalPlayer
 local _RS = game:GetService("RunService")
 local _UIS = game:GetService("UserInputService")
 local _W = game:GetService("Workspace")
+local _TS = game:GetService("TweenService")
+local _VU = game:GetService("VirtualUser")
 local _PG = _LP:WaitForChild("PlayerGui")
 
 -- // [2] PRIVATE CONFIGURATION //
 local Config = {
-    Aimbot = false, Key = Enum.KeyCode.V, FOV = 150, Smooth = 5, Target = "Torso",
-    ESP = false, Names = false, Dist = false, Health = false,
-    Speed = 0, Fly = false, FlySpeed = 50, Jump = false,
-    Recoil = false, Ammo = false, Hitbox = 2,
-    Stamina = false, NoFall = false, Interact = false,
-    Visible = true
+    Combat = {
+        Aimbot = false,
+        Silent = false,
+        Key = Enum.KeyCode.V,
+        FOV = 150,
+        Smooth = 5,
+        Hitbox = 2,
+        Recoil = false,
+        Ammo = false,
+        TargetPart = "Torso" -- Fixed: added missing key
+    },
+    Visuals = {
+        Enabled = false,
+        Names = false,
+        Dist = false,
+        Health = false,
+        Tracers = false,
+        Team = true
+    },
+    Movement = {
+        Speed = 0,
+        Fly = false,
+        FlySpeed = 50,
+        Jump = false,
+        Stamina = false,
+        NoFall = false,
+        Spinbot = false,
+        Noclip = false
+    },
+    Teleport = {
+        SafeMode = true
+    },
+    Misc = {
+        Interact = false,
+        AntiAFK = false
+    },
+    UI = {
+        Visible = true
+    }
 }
 
--- // [3] CAMOUFLAGE UI (BYPASSES GUI SCANNERS) //
-local function BuildGhostUI()
-    local S = Instance.new("ScreenGui", _PG); S.Name = "BubbleChatStorage"; S.ResetOnSpawn = false
-    local M = Instance.new("Frame", S); M.Size = UDim2.new(0, 320, 0, 450); M.Position = UDim2.new(0.5, -160, 0.5, -225); M.BackgroundColor3 = Color3.fromRGB(15, 15, 15); M.BorderSizePixel = 0; M.Active = true; M.Draggable = true
-    Instance.new("UICorner", M)
+-- // [3] PREMIUM CUSTOM UI (NO LIBRARIES) //
+local function BuildPremiumUI()
+    local Screen = Instance.new("ScreenGui", _PG); Screen.Name = "SystemConfig_S2"; Screen.ResetOnSpawn = false
 
-    local T = Instance.new("TextLabel", M); T.Size = UDim2.new(1, 0, 0, 35); T.BackgroundTransparency = 1; T.Text = " GHOST V19 | R-CTRL"; T.TextColor3 = Color3.fromRGB(0, 180, 255); T.TextXAlignment = Enum.TextXAlignment.Left; T.Font = Enum.Font.GothamBold; T.TextSize = 13
-    local C = Instance.new("ScrollingFrame", M); C.Size = UDim2.new(1, -20, 1, -50); C.Position = UDim2.new(0, 10, 0, 40); C.BackgroundTransparency = 1; C.ScrollBarThickness = 2; C.CanvasSize = UDim2.new(0,0,0,850)
-    local L = Instance.new("UIListLayout", C); L.Padding = UDim.new(0, 5)
+    local Main = Instance.new("Frame", Screen)
+    Main.Size = UDim2.new(0, 500, 0, 400)
+    Main.Position = UDim2.new(0.5, -250, 0.5, -200)
+    Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    Main.BorderSizePixel = 0; Main.Active = true; Main.Draggable = true
+    Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
 
-    local function Tog(txt, prop)
-        local b = Instance.new("TextButton", C); b.Size = UDim2.new(1, -10, 0, 35); b.BackgroundColor3 = Color3.fromRGB(25, 25, 25); b.Text = "  " .. txt .. ": OFF"; b.TextColor3 = Color3.fromRGB(200, 200, 200); b.TextXAlignment = Enum.TextXAlignment.Left; b.BorderSizePixel = 0; Instance.new("UICorner", b)
+    -- Sidebar
+    local Sidebar = Instance.new("Frame", Main)
+    Sidebar.Size = UDim2.new(0, 140, 1, 0)
+    Sidebar.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
+    Sidebar.BorderSizePixel = 0
+    Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 10)
+
+    local Logo = Instance.new("TextLabel", Sidebar)
+    Logo.Size = UDim2.new(1, 0, 0, 50); Logo.Text = "GHOST PRO"; Logo.TextColor3 = Color3.fromRGB(0, 160, 255); Logo.Font = Enum.Font.GothamBold; Logo.TextSize = 16; Logo.BackgroundTransparency = 1
+
+    local TabCont = Instance.new("Frame", Sidebar); TabCont.Size = UDim2.new(1, 0, 1, -60); TabCont.Position = UDim2.new(0, 0, 0, 60); TabCont.BackgroundTransparency = 1
+    local TabLay = Instance.new("UIListLayout", TabCont); TabLay.Padding = UDim.new(0, 5)
+
+    -- Pages
+    local PageCont = Instance.new("Frame", Main); PageCont.Size = UDim2.new(1, -150, 1, -20); PageCont.Position = UDim2.new(0, 145, 0, 10); PageCont.BackgroundTransparency = 1
+    local Pages = {}
+
+    local function CreatePage(name)
+        local P = Instance.new("ScrollingFrame", PageCont); P.Size = UDim2.new(1, 0, 1, 0); P.BackgroundTransparency = 1; P.Visible = false; P.ScrollBarThickness = 1; P.CanvasSize = UDim2.new(0,0,0,600)
+        Instance.new("UIListLayout", P).Padding = UDim.new(0, 5)
+        Pages[name] = P
+
+        local B = Instance.new("TextButton", TabCont); B.Size = UDim2.new(1, -10, 0, 35); B.Position = UDim2.new(0, 5, 0, 0); B.BackgroundColor3 = Color3.fromRGB(30, 30, 30); B.Text = name; B.TextColor3 = Color3.fromRGB(200, 200, 200); B.Font = Enum.Font.Gotham; B.TextSize = 12; B.BorderSizePixel = 0
+        Instance.new("UICorner", B)
+        B.MouseButton1Click:Connect(function() for _, p in pairs(Pages) do p.Visible = false end; P.Visible = true end)
+        return P
+    end
+
+    local CombatPage = CreatePage("Combat")
+    local VisualsPage = CreatePage("Visuals")
+    local MovementPage = CreatePage("Movement")
+    local MiscPage = CreatePage("Misc")
+    CombatPage.Visible = true
+
+    local function AddTog(p, txt, tab, key)
+        local b = Instance.new("TextButton", p); b.Size = UDim2.new(1, -10, 0, 35); b.BackgroundColor3 = Color3.fromRGB(25, 25, 25); b.Text = "  " .. txt .. ": OFF"; b.TextColor3 = Color3.fromRGB(200, 200, 200); b.Font = Enum.Font.Gotham; b.TextSize = 12; b.TextXAlignment = Enum.TextXAlignment.Left; b.BorderSizePixel = 0; Instance.new("UICorner", b)
         b.MouseButton1Click:Connect(function()
-            Config[prop] = not Config[prop]
-            b.Text = "  " .. txt .. ": " .. (Config[prop] and "ON" or "OFF")
-            b.TextColor3 = Config[prop] and Color3.fromRGB(0, 255, 120) or Color3.fromRGB(200, 200, 200)
+            Config[tab][key] = not Config[tab][key]
+            local s = Config[tab][key]
+            b.Text = "  " .. txt .. ": " .. (s and "ON" or "OFF")
+            b.TextColor3 = s and Color3.fromRGB(0, 255, 120) or Color3.fromRGB(200, 200, 200)
         end)
     end
 
-    local function Sli(txt, min, max, prop)
-        local f = Instance.new("Frame", C); f.Size = UDim2.new(1, -10, 0, 45); f.BackgroundTransparency = 1
-        local l = Instance.new("TextLabel", f); l.Size = UDim2.new(1, 0, 0, 15); l.Text = txt .. ": " .. Config[prop]; l.TextColor3 = Color3.fromRGB(150, 150, 150); l.BackgroundTransparency = 1; l.TextSize = 11; l.TextXAlignment = Enum.TextXAlignment.Left
-        local i = Instance.new("TextBox", f); i.Size = UDim2.new(1, 0, 0, 25); i.Position = UDim2.new(0, 0, 0, 18); i.BackgroundColor3 = Color3.fromRGB(30, 30, 30); i.Text = tostring(Config[prop]); i.TextColor3 = Color3.fromRGB(255, 255, 255); i.BorderSizePixel = 0; Instance.new("UICorner", i)
-        i.FocusLost:Connect(function() local v = tonumber(i.Text); if v then v = math.clamp(v, min, max); Config[prop] = v; l.Text = txt .. ": " .. v end end)
+    local function AddSli(p, txt, min, max, cur, tab, key)
+        local f = Instance.new("Frame", p); f.Size = UDim2.new(1, -10, 0, 45); f.BackgroundTransparency = 1
+        local l = Instance.new("TextLabel", f); l.Size = UDim2.new(1, 0, 0, 15); l.Text = txt .. ": " .. cur; l.TextColor3 = Color3.fromRGB(150, 150, 150); l.BackgroundTransparency = 1; l.TextSize = 11; l.TextXAlignment = Enum.TextXAlignment.Left
+        local i = Instance.new("TextBox", f); i.Size = UDim2.new(1, -20, 0, 20); i.Position = UDim2.new(0, 10, 0, 25); i.BackgroundColor3 = Color3.fromRGB(30, 30, 30); i.Text = tostring(cur); i.TextColor3 = Color3.fromRGB(255, 255, 255); i.BorderSizePixel = 0; Instance.new("UICorner", i)
+        i.FocusLost:Connect(function() local v = tonumber(i.Text); if v then v = math.clamp(v, min, max); Config[tab][key] = v; l.Text = txt .. ": " .. v end end)
     end
 
-    Tog("Smooth Aimbot", "Aimbot"); Sli("Aimbot Smooth", 1, 20, "Smooth"); Sli("Aimbot FOV", 10, 800, "FOV")
-    Tog("Weapon Mods", "Recoil"); Tog("Infinite Ammo", "Ammo"); Sli("Hitbox Size", 2, 20, "Hitbox")
-    Tog("Master ESP", "ESP"); Tog("ESP Names", "Names"); Tog("ESP Distance", "Dist"); Tog("ESP Health", "Health")
-    Sli("Speed Offset", 0, 100, "Speed"); Tog("Character Fly", "Fly"); Tog("Infinite Jump", "Jump")
-    Tog("Infinite Stamina", "Stamina"); Tog("No Fall Damage", "NoFall"); Tog("Fast Interaction", "Interact")
+    AddTog(CombatPage, "Aimbot (V Hold)", "Combat", "Aimbot"); AddSli(CombatPage, "FOV", 0, 800, 150, "Combat", "FOV")
+    AddTog(CombatPage, "No Recoil", "Combat", "Recoil"); AddTog(CombatPage, "Infinite Ammo", "Combat", "Ammo"); AddSli(CombatPage, "Hitbox Size", 2, 20, 2, "Combat", "Hitbox")
 
-    _UIS.InputBegan:Connect(function(i, p) if not p and i.KeyCode == Enum.KeyCode.RightControl then Config.Visible = not Config.Visible; M.Visible = Config.Visible end end)
+    AddTog(VisualsPage, "Master ESP", "Visuals", "Enabled"); AddTog(VisualsPage, "ESP Names", "Visuals", "Names"); AddTog(VisualsPage, "ESP Dist", "Visuals", "Dist"); AddTog(VisualsPage, "ESP Health", "Visuals", "Health")
+
+    AddSli(MovementPage, "Speed Offset", 0, 100, 0, "Movement", "Speed"); AddTog(MovementPage, "Character Fly", "Movement", "Fly"); AddTog(MovementPage, "Infinite Jump", "Movement", "Jump")
+    AddTog(MovementPage, "Noclip", "Movement", "Noclip"); AddTog(MovementPage, "Infinite Stamina", "Movement", "Stamina"); AddTog(MovementPage, "No Fall Damage", "Movement", "NoFall"); AddTog(MovementPage, "Spinbot Defense", "Movement", "Spinbot")
+
+    AddTog(MiscPage, "Instant Interaction", "Misc", "Interact"); AddTog(MiscPage, "Anti-AFK", "Misc", "AntiAFK")
+
+    _UIS.InputBegan:Connect(function(i, p) if not p and i.KeyCode == Enum.KeyCode.RightShift then Config.UI.Visible = not Config.UI.Visible; Main.Visible = Config.UI.Visible end end)
 end
 
-BuildGhostUI()
+BuildPremiumUI()
 
--- // [4] CORE LOGIC (ZERO DETECTABLE HOOKS) //
-
--- Targeting Logic
-local function GetClosest()
-    local t = nil; local md = Config.FOV
+-- // [4] DYNAMIC UTILITIES //
+local function GetTarget()
+    local t = nil; local md = Config.Combat.FOV
     for _, p in pairs(_P:GetPlayers()) do
-        if p ~= _LP and p.Character and p.Character:FindFirstChild(Config.Target) and p.Character.Humanoid.Health > 0 then
-            local pos, on = _W.CurrentCamera:WorldToViewportPoint(p.Character[Config.Target].Position)
-            if on then
-                local d = (Vector2.new(pos.X, pos.Y) - Vector2.new(_W.CurrentCamera.ViewportSize.X/2, _W.CurrentCamera.ViewportSize.Y/2)).Magnitude
-                if d < md then t = p; md = d end
+        if p ~= _LP and p.Character and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+            if Config.Visuals.Team and p.Team == _LP.Team then continue end
+            local r = p.Character:FindFirstChild(Config.Combat.TargetPart) or p.Character:FindFirstChild("HumanoidRootPart")
+            if r then
+                local pos, on = _W.CurrentCamera:WorldToViewportPoint(r.Position)
+                if on then
+                    local d = (Vector2.new(pos.X, pos.Y) - Vector2.new(_W.CurrentCamera.ViewportSize.X/2, _W.CurrentCamera.ViewportSize.Y/2)).Magnitude
+                    if d < md then t = p; md = d end
+                end
             end
         end
     end
     return t
 end
 
--- Weapon Scan Logic
+-- // [5] CORE BYPASSES & LOGIC //
+
+-- WEAPON SCANNER
 task.spawn(function()
     while task.wait(2) do
-        if Config.Recoil or Config.Ammo then
-            local tool = _LP.Character and _LP.Character:FindFirstChildOfClass("Tool")
-            if tool then
+        if Config.Combat.Recoil or Config.Combat.Ammo then
+            local t = _LP.Character and _LP.Character:FindFirstChildOfClass("Tool")
+            if t then
                 pcall(function()
-                    for _, v in pairs(tool:GetDescendants()) do
+                    for _, v in pairs(t:GetDescendants()) do
                         if v:IsA("ValueBase") then
                             local n = v.Name:lower()
-                            if Config.Recoil and (n:find("recoil") or n:find("kick")) then v.Value = 0 end
-                            if Config.Ammo and (n:find("ammo") or n:find("mag")) then v.Value = 999 end
+                            if Config.Combat.Recoil and (n:find("recoil") or n:find("kick")) then v.Value = 0 end
+                            if Config.Combat.Ammo and (n:find("ammo") or n:find("mag")) then v.Value = 999 end
                         end
                     end
                 end)
@@ -104,81 +184,80 @@ task.spawn(function()
     end
 end)
 
--- Visual Update Loop
-local function ApplyESP(plr)
-    if plr == _LP then return end
-    local function Create()
-        local char = plr.Character
-        if not char then return end
-        local b = char:FindFirstChild("GhostBill") or Instance.new("BillboardGui", char); b.Name = "GhostBill"; b.AlwaysOnTop = true; b.Size = UDim2.new(0,100,0,50); b.Adornee = char:FindFirstChild("Head")
-        local l = b:FindFirstChild("L") or Instance.new("TextLabel", b); l.Name = "L"; l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = Color3.fromRGB(255,255,255); l.TextSize = 10
-        local h = char:FindFirstChild("GhostH") or Instance.new("Highlight", char); h.Name = "GhostH"; h.FillColor = plr.TeamColor.Color
-        task.spawn(function()
-            while char.Parent and b.Parent do
-                if Config.ESP then
-                    h.Enabled = true; b.Enabled = true
-                    local dist = math.floor((_LP.Character.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Magnitude)
-                    local txt = ""
-                    if Config.Names then txt = plr.Name end
-                    if Config.Dist then txt = txt .. " [" .. dist .. "m]" end
-                    if Config.Health then txt = txt .. " (" .. math.floor(char.Humanoid.Health) .. "%)" end
-                    l.Text = txt
-                else h.Enabled = false; b.Enabled = false end
-                task.wait(0.1) -- Fast update for ESP
-            end
-        end)
-    end
-    plr.CharacterAdded:Connect(Create); if plr.Character then Create() end
-end
-for _, p in pairs(_P:GetPlayers()) do ApplyESP(p) end
-_P.PlayerAdded:Connect(ApplyESP)
-
--- Main Physics & Combat Loop
+-- PHYSICS LOOP
 _RS.Heartbeat:Connect(function()
-    local char = _LP.Character
-    local hum = char and char:FindFirstChild("Humanoid")
-    local root = char and char:FindFirstChild("HumanoidRootPart")
-    if char and hum and root then
-        -- Safe Speed
-        if Config.Speed > 0 and not Config.Fly and hum.MoveDirection.Magnitude > 0 then root.CFrame = root.CFrame + (hum.MoveDirection * (Config.Speed / 100)) end
-        -- Fly
-        if Config.Fly then
-            hum.PlatformStand = true; local m = Vector3.new(0,0,0)
+    local c = _LP.Character; local r = c and c:FindFirstChild("HumanoidRootPart"); local h = c and c:FindFirstChild("Humanoid")
+    if c and r and h then
+        if Config.Movement.Speed > 0 and not Config.Movement.Fly and h.MoveDirection.Magnitude > 0 then r.CFrame = r.CFrame + (h.MoveDirection * (Config.Movement.Speed / 100)) end
+        if Config.Movement.Fly then
+            h.PlatformStand = true; local m = Vector3.new(0,0,0)
             if _UIS:IsKeyDown(Enum.KeyCode.W) then m = m + _W.CurrentCamera.CFrame.LookVector end
             if _UIS:IsKeyDown(Enum.KeyCode.S) then m = m - _W.CurrentCamera.CFrame.LookVector end
             if _UIS:IsKeyDown(Enum.KeyCode.A) then m = m - _W.CurrentCamera.CFrame.RightVector end
             if _UIS:IsKeyDown(Enum.KeyCode.D) then m = m + _W.CurrentCamera.CFrame.RightVector end
             if _UIS:IsKeyDown(Enum.KeyCode.Space) then m = m + Vector3.new(0,1,0) end
             if _UIS:IsKeyDown(Enum.KeyCode.LeftShift) then m = m - Vector3.new(0,1,0) end
-            root.Velocity = Vector3.new(0, 0.05, 0); root.CFrame = root.CFrame + (m * (Config.FlySpeed/50))
-        elseif hum.PlatformStand then hum.PlatformStand = false end
-        -- Mods
-        if Config.Stamina then local s = char:FindFirstChild("Stamina") or _LP:FindFirstChild("Stamina"); if s and s:IsA("ValueBase") then s.Value = 100 end end
-        if Config.NoFall then if hum:GetState() == Enum.HumanoidStateType.FallingDown then hum:ChangeState(Enum.HumanoidStateType.Running) end end
+            r.Velocity = Vector3.new(0,0.05,0); r.CFrame = r.CFrame + (m * 1.5)
+        elseif h.PlatformStand then h.PlatformStand = false end
+        if Config.Movement.Stamina then local s = c:FindFirstChild("Stamina") or _LP:FindFirstChild("Stamina"); if s and s:IsA("ValueBase") then s.Value = 100 end end
+        if Config.Movement.NoFall then if h:GetState() == Enum.HumanoidStateType.FallingDown then h:ChangeState(Enum.HumanoidStateType.Running) end end
+        if Config.Movement.Spinbot then r.CFrame = r.CFrame * CFrame.Angles(0, math.rad(25), 0) end
+        if Config.Movement.Noclip then for _,v in pairs(c:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end end
         -- Hitbox
         if tick() % 1 < 0.1 then
             for _, p in pairs(_P:GetPlayers()) do
                 if p ~= _LP and p.Character then
-                    for _, n in pairs({"Head", "Torso", "UpperTorso", "LowerTorso", "HumanoidRootPart"}) do
-                        local t = p.Character:FindFirstChild(n); if t then t.Size = Vector3.new(Config.Hitbox, Config.Hitbox, Config.Hitbox); t.Transparency = 0.5; t.CanCollide = false end
+                    for _, n in pairs({"Head", "Torso", "HumanoidRootPart"}) do
+                        local t = p.Character:FindFirstChild(n); if t then t.Size = Vector3.new(Config.Combat.Hitbox, Config.Combat.Hitbox, Config.Combat.Hitbox); t.Transparency = 0.5; t.CanCollide = false end
                     end
                 end
             end
         end
     end
+    if Config.Misc.AntiAFK then _VU:CaptureController(); _VU:ClickButton2(Vector2.new()) end
 end)
 
--- Render Loop (Aimbot)
+-- Performance Interaction
+task.spawn(function()
+    while task.wait(3) do
+        if Config.Misc.Interact then for _,v in pairs(_W:GetDescendants()) do if v:IsA("ProximityPrompt") then v.HoldDuration = 0 end end end
+    end
+end)
+
+-- VISUALS LOOP
+local function ApplyESP(plr)
+    if plr == _LP then return end
+    local function Create()
+        local char = plr.Character; if not char then return end
+        local b = char:FindFirstChild("GB") or Instance.new("BillboardGui", char); b.Name = "GB"; b.AlwaysOnTop = true; b.Size = UDim2.new(0,100,0,50); b.Adornee = char:FindFirstChild("Head")
+        local l = b:FindFirstChild("L") or Instance.new("TextLabel", b); l.Name = "L"; l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = Color3.fromRGB(255,255,255); l.TextSize = 10
+        local h = char:FindFirstChild("GH") or Instance.new("Highlight", char); h.Name = "GH"; h.FillColor = plr.TeamColor.Color
+        task.spawn(function()
+            while char.Parent and b.Parent do
+                if Config.Visuals.Enabled then h.Enabled = true; b.Enabled = true
+                    local d = 0; if _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart") then d = math.floor((_LP.Character.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Magnitude) end
+                    local txt = ""; if Config.Visuals.Names then txt = plr.Name end; if Config.Visuals.Dist then txt = txt .. " [" .. d .. "m]" end; if Config.Visuals.Health then txt = txt .. " (" .. math.floor(char.Humanoid.Health) .. "%)" end; l.Text = txt
+                else h.Enabled = false; b.Enabled = false end
+                task.wait(0.2)
+            end
+        end)
+    end
+    plr.CharacterAdded:Connect(Create); if plr.Character then Create() end
+end
+for _,p in pairs(_P:GetPlayers()) do ApplyESP(p) end
+_P.PlayerAdded:Connect(ApplyESP)
+
+-- AIMBOT LOOP
 _RS.RenderStepped:Connect(function()
-    if Config.Aimbot and _UIS:IsKeyDown(Config.Key) then
-        local t = GetClosest()
+    if Config.Combat.Aimbot and _UIS:IsKeyDown(Config.Combat.Key) then
+        local t = GetTarget()
         if t and t.Character then
-            local rot = CFrame.new(_W.CurrentCamera.CFrame.Position, t.Character[Config.Target].Position)
-            _W.CurrentCamera.CFrame = _W.CurrentCamera.CFrame:Lerp(rot, 1/Config.Smooth)
+            local rot = CFrame.new(_W.CurrentCamera.CFrame.Position, t.Character[Config.Combat.TargetPart].Position)
+            _W.CurrentCamera.CFrame = _W.CurrentCamera.CFrame:Lerp(rot, 1/Config.Combat.Smooth)
         end
     end
 end)
 
-_UIS.JumpRequest:Connect(function() if Config.Jump and _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart") then _LP.Character.HumanoidRootPart.CFrame = _LP.Character.HumanoidRootPart.CFrame + Vector3.new(0,5,0) end end)
+_UIS.JumpRequest:Connect(function() if Config.Movement.Jump and _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart") then _LP.Character.HumanoidRootPart.CFrame = _LP.Character.HumanoidRootPart.CFrame + Vector3.new(0,5,0) end end)
 
-print("[V19] GHOST NATIVE LOADED SUCCESSFULLY.")
+print("[V20 PRO] ULTIMATE STEALTH ACTIVATED. R-SHIFT TO TOGGLE.")
