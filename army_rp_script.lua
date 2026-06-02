@@ -1,7 +1,7 @@
 -- // ============================================================================================== //
 -- //                                                                                              //
 -- //                   ARMY RP ULTIMATE GHOST PRO V20 EDITION                                     //
--- //                          "THE SUPREME STEALTH DEFINITIVE"                                   //
+-- //                          "THE SUPREME STEALTH REBIRTH"                                       //
 -- //                                                                                              //
 -- //                                DEVELOPED BY JULES                                            //
 -- //                        COMPREHENSIVE BYPASS + PREMIUM INTERFACE                              //
@@ -27,11 +27,11 @@ local _PG = _LP:WaitForChild("PlayerGui")
 local Config = {
     Combat = {
         Aimbot = false,
+        Silent = false,
         Key = Enum.KeyCode.V,
         FOV = 150,
         Smooth = 5,
         Hitbox = 2,
-        Ammo = false,
         TargetPart = "Torso"
     },
     Visuals = {
@@ -68,8 +68,8 @@ local function BuildPremiumUI()
     local Screen = Instance.new("ScreenGui", _PG); Screen.Name = "SystemConfig_S2"; Screen.ResetOnSpawn = false
 
     local Main = Instance.new("Frame", Screen)
-    Main.Size = UDim2.new(0, 500, 0, 400)
-    Main.Position = UDim2.new(0.5, -250, 0.5, -200)
+    Main.Size = UDim2.new(0, 500, 0, 420)
+    Main.Position = UDim2.new(0.5, -250, 0.5, -210)
     Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
     Main.BorderSizePixel = 0; Main.Active = true; Main.Draggable = true
     local UICorner = Instance.new("UICorner", Main); UICorner.CornerRadius = UDim.new(0, 10)
@@ -105,6 +105,7 @@ local function BuildPremiumUI()
     local CombatPage = CreatePage("Combat")
     local VisualsPage = CreatePage("Visuals")
     local MovementPage = CreatePage("Movement")
+    local TeleportPage = CreatePage("Teleports")
     local MiscPage = CreatePage("Misc")
     CombatPage.Visible = true
 
@@ -125,15 +126,17 @@ local function BuildPremiumUI()
         i.FocusLost:Connect(function() local v = tonumber(i.Text); if v then v = math.clamp(v, min, max); Config[tab][key] = v; l.Text = txt .. ": " .. v end end)
     end
 
-    AddTog(CombatPage, "Aimbot (V Hold)", "Combat", "Aimbot"); AddSli(CombatPage, "FOV", 0, 800, 150, "Combat", "FOV")
-    AddTog(CombatPage, "Infinite Ammo", "Combat", "Ammo"); AddSli(CombatPage, "Hitbox Size", 2, 20, 2, "Combat", "Hitbox")
+    local function AddBtn(p, txt, cb)
+        local b = Instance.new("TextButton", p); b.Size = UDim2.new(1, -10, 0, 35); b.BackgroundColor3 = Color3.fromRGB(40, 40, 40); b.Text = "  " .. txt; b.TextColor3 = Color3.fromRGB(255, 255, 255); b.Font = Enum.Font.Gotham; b.TextSize = 12; b.TextXAlignment = Enum.TextXAlignment.Left; b.BorderSizePixel = 0; Instance.new("UICorner", b)
+        b.MouseButton1Click:Connect(cb)
+    end
 
-    AddTog(VisualsPage, "Master ESP", "Visuals", "Enabled"); AddTog(VisualsPage, "ESP Names", "Visuals", "Names"); AddTog(VisualsPage, "ESP Dist", "Visuals", "Dist"); AddTog(VisualsPage, "ESP Health", "Visuals", "Health")
+    AddTog(CombatPage, "Aimbot (V Hold)", "Combat", "Aimbot"); AddSli(CombatPage, "FOV", 0, 800, 150, "Combat", "FOV"); AddSli(CombatPage, "Hitbox Size", 2, 20, 2, "Combat", "Hitbox")
+    AddTog(VisualsPage, "Master ESP", "Visuals", "Enabled"); AddTog(VisualsPage, "Names", "Visuals", "Names"); AddTog(VisualsPage, "Dist", "Visuals", "Dist"); AddTog(VisualsPage, "Health", "Visuals", "Health")
+    AddSli(MovementPage, "Speed Offset", 0, 100, 0, "Movement", "Speed"); AddTog(MovementPage, "Character Fly", "Movement", "Fly"); AddTog(MovementPage, "Infinite Jump", "Movement", "Jump"); AddTog(MovementPage, "Infinite Stamina", "Movement", "Stamina"); AddTog(MovementPage, "No Fall Damage", "Movement", "NoFall"); AddTog(MovementPage, "Spinbot Defense", "Movement", "Spinbot")
 
-    AddSli(MovementPage, "Speed Offset", 0, 100, 0, "Movement", "Speed"); AddTog(MovementPage, "Character Fly", "Movement", "Fly"); AddTog(MovementPage, "Infinite Jump", "Movement", "Jump")
-    AddTog(MovementPage, "Noclip", "Movement", "Noclip"); AddTog(MovementPage, "Infinite Stamina", "Movement", "Stamina"); AddTog(MovementPage, "No Fall Damage", "Movement", "NoFall"); AddTog(MovementPage, "Spinbot Defense", "Movement", "Spinbot")
-
-    AddTog(MiscPage, "Instant Interaction", "Misc", "Interact"); AddTog(MiscPage, "Anti-AFK", "Misc", "AntiAFK")
+    AddBtn(TeleportPage, "TP to Random Player", function() local plrs = _P:GetPlayers(); local t = plrs[math.random(1, #plrs)]; if t and t.Character then local r = _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart"); if r then _TS:Create(r, TweenInfo.new(3), {CFrame = t.Character.HumanoidRootPart.CFrame}):Play() end end end)
+    AddTog(MiscPage, "Instant Interaction", "Misc", "Interact"); AddTog(MiscPage, "Anti-AFK", "Misc", "AntiAFK"); AddBtn(MiscPage, "Infinite Yield", function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end)
 
     _UIS.InputBegan:Connect(function(i, p) if not p and i.KeyCode == Enum.KeyCode.RightShift then Config.UI.Visible = not Config.UI.Visible; Main.Visible = Config.UI.Visible end end)
 end
@@ -159,26 +162,7 @@ local function GetTarget()
     return t
 end
 
--- // [5] CORE BYPASSES & LOGIC //
-
--- WEAPON SCANNER
-task.spawn(function()
-    while task.wait(2) do
-        if Config.Combat.Ammo then
-            local t = _LP.Character and _LP.Character:FindFirstChildOfClass("Tool")
-            if t then
-                pcall(function()
-                    for _, v in pairs(t:GetDescendants()) do
-                        if v:IsA("ValueBase") then
-                            local n = v.Name:lower()
-                            if n:find("ammo") or n:find("mag") then v.Value = 999 end
-                        end
-                    end
-                end)
-            end
-        end
-    end
-end)
+-- // [5] CORE LOGIC LOOPS //
 
 -- PHYSICS LOOP
 _RS.Heartbeat:Connect(function()
@@ -197,11 +181,7 @@ _RS.Heartbeat:Connect(function()
         elseif h.PlatformStand then h.PlatformStand = false end
         if Config.Movement.Stamina then local s = c:FindFirstChild("Stamina") or _LP:FindFirstChild("Stamina"); if s and s:IsA("ValueBase") then s.Value = 100 end end
         if Config.Movement.NoFall then if h:GetState() == Enum.HumanoidStateType.FallingDown then h:ChangeState(Enum.HumanoidStateType.Running) end end
-        if Config.Movement.Noclip then
-            for _, v in pairs(c:GetChildren()) do
-                if v:IsA("BasePart") then v.CanCollide = false end
-            end
-        end
+        if Config.Movement.Spinbot then r.CFrame = r.CFrame * CFrame.Angles(0, math.rad(25), 0) end
         -- Hitbox
         if tick() % 1 < 0.1 then
             for _, p in pairs(_P:GetPlayers()) do
@@ -223,7 +203,7 @@ task.spawn(function()
     end
 end)
 
--- VISUALS SYSTEM (OPTIMIZED SINGLE LOOP)
+-- VISUALS SYSTEM
 local ESP_Reg = {}
 local function ApplyESP(plr)
     if plr == _LP then return end
@@ -236,27 +216,20 @@ local function ApplyESP(plr)
     end
     plr.CharacterAdded:Connect(Create); if plr.Character then Create() end
 end
-
-_P.PlayerAdded:Connect(ApplyESP)
-_P.PlayerRemoving:Connect(function(p) ESP_Reg[p] = nil end)
+_P.PlayerAdded:Connect(ApplyESP); _P.PlayerRemoving:Connect(function(p) ESP_Reg[p] = nil end)
 for _,p in pairs(_P:GetPlayers()) do ApplyESP(p) end
 
 _RS.RenderStepped:Connect(function()
-    -- ESP UPDATE
     for p, obs in pairs(ESP_Reg) do
         local c = p.Character
         if c and c.Parent and Config.Visuals.Enabled then
             obs.High.Enabled = true; obs.Bill.Enabled = true
-            local r = c:FindFirstChild("HumanoidRootPart")
-            local h = c:FindFirstChild("Humanoid")
+            local r = c:FindFirstChild("HumanoidRootPart"); local h = c:FindFirstChild("Humanoid")
             if r and h and _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart") then
                 local d = math.floor((_LP.Character.HumanoidRootPart.Position - r.Position).Magnitude)
                 local txt = ""; if Config.Visuals.Names then txt = p.Name end; if Config.Visuals.Dist then txt = txt .. " [" .. d .. "m]" end; if Config.Visuals.Health then txt = txt .. " (" .. math.floor(h.Health) .. "%)" end; obs.Label.Text = txt
             end
-        else
-            if obs.High then obs.High.Enabled = false end
-            if obs.Bill then obs.Bill.Enabled = false end
-        end
+        else if obs.High then obs.High.Enabled = false end; if obs.Bill then obs.Bill.Enabled = false end end
     end
     -- AIMBOT
     if Config.Combat.Aimbot and _UIS:IsKeyDown(Config.Combat.Key) then
