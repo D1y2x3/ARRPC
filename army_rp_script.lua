@@ -45,6 +45,8 @@ local MovementSettings = {
     Noclip = false,
     InfStamina = false,
     NoFallDamage = false,
+    InfJump = false,
+    Spinbot = false,
     VehicleFly = false,
     VehicleSpeed = 50
 }
@@ -52,9 +54,12 @@ local MovementSettings = {
 local ESPSettings = {
     Enabled = false,
     Boxes = false,
+    CornerBoxes = false,
     Names = false,
+    HealthBar = false,
+    Distance = false,
     Tracers = false,
-    Teams = false,
+    Teams = true,
     Fullbright = false
 }
 
@@ -83,14 +88,15 @@ end
 
 -- WINDOW
 local Window = Rayfield:CreateWindow({
-   Name = "Army RP | Xeno",
-   LoadingTitle = "Army RP Script",
+   Name = "Army RP | Xeno Premium",
+   LoadingTitle = "Army RP Premium",
    LoadingSubtitle = "by Jules",
    ConfigurationSaving = {
       Enabled = true,
       FolderName = "ArmyRP_Jules",
       FileName = "Config"
    },
+   Theme = "DarkBlue", -- More aesthetic theme
    Discord = {
       Enabled = false,
       Invite = "",
@@ -191,6 +197,16 @@ MovementTab:CreateToggle({
    CurrentValue = false,
    Callback = function(Value) MovementSettings.NoFallDamage = Value end,
 })
+MovementTab:CreateToggle({
+   Name = "Infinite Jump",
+   CurrentValue = false,
+   Callback = function(Value) MovementSettings.InfJump = Value end,
+})
+MovementTab:CreateToggle({
+   Name = "Spinbot",
+   CurrentValue = false,
+   Callback = function(Value) MovementSettings.Spinbot = Value end,
+})
 
 MovementTab:CreateSection("Flight")
 MovementTab:CreateToggle({
@@ -238,9 +254,24 @@ VisualsTab:CreateToggle({
    Callback = function(Value) ESPSettings.Boxes = Value end,
 })
 VisualsTab:CreateToggle({
+   Name = "Corner Boxes",
+   CurrentValue = false,
+   Callback = function(Value) ESPSettings.CornerBoxes = Value end,
+})
+VisualsTab:CreateToggle({
    Name = "Names",
    CurrentValue = false,
    Callback = function(Value) ESPSettings.Names = Value end,
+})
+VisualsTab:CreateToggle({
+   Name = "Health Bar",
+   CurrentValue = false,
+   Callback = function(Value) ESPSettings.HealthBar = Value end,
+})
+VisualsTab:CreateToggle({
+   Name = "Distance",
+   CurrentValue = false,
+   Callback = function(Value) ESPSettings.Distance = Value end,
 })
 VisualsTab:CreateToggle({
    Name = "Tracers",
@@ -384,9 +415,8 @@ local bodyVelocity = Instance.new("BodyVelocity")
 local vGyro = Instance.new("BodyGyro")
 local vVelocity = Instance.new("BodyVelocity")
 
-local function ApplyWeaponMods()
-    local tool = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Tool")
-    if not tool then return end
+local function ApplyWeaponMods(tool)
+    if not tool or not tool:IsA("Tool") then return end
     local config = tool:FindFirstChild("Configuration") or tool:FindFirstChild("Settings") or tool
     if WeaponSettings.NoRecoil then
         local recoil = config:FindFirstChild("Recoil") or config:FindFirstChild("RecoilPower")
@@ -402,33 +432,85 @@ local function ApplyWeaponMods()
     end
 end
 
+local function MonitorCharacter(char)
+    char.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") then
+            task.wait(0.1)
+            ApplyWeaponMods(child)
+        end
+    end)
+end
+
+LocalPlayer.CharacterAdded:Connect(MonitorCharacter)
+if LocalPlayer.Character then MonitorCharacter(LocalPlayer.Character) end
+
 -- Optimized ESP Handling
 local ESPObjects = {}
 local function CreateESP(plr)
     if plr == LocalPlayer then return end
     local Box = Drawing.new("Square")
     Box.Visible = false
-    Box.Color = Color3.fromRGB(255, 0, 0)
     Box.Thickness = 1
+
+    local Corner1 = Drawing.new("Line")
+    local Corner2 = Drawing.new("Line")
+    local Corner3 = Drawing.new("Line")
+    local Corner4 = Drawing.new("Line")
+    local Corner5 = Drawing.new("Line")
+    local Corner6 = Drawing.new("Line")
+    local Corner7 = Drawing.new("Line")
+    local Corner8 = Drawing.new("Line")
+    local Corners = {Corner1, Corner2, Corner3, Corner4, Corner5, Corner6, Corner7, Corner8}
+    for _, c in pairs(Corners) do c.Visible = false; c.Thickness = 1.5 end
+
+    local HealthBar = Drawing.new("Line")
+    HealthBar.Visible = false
+    HealthBar.Thickness = 2
+
+    local HealthOutline = Drawing.new("Line")
+    HealthOutline.Visible = false
+    HealthOutline.Thickness = 3
+    HealthOutline.Color = Color3.fromRGB(0,0,0)
+
     local Name = Drawing.new("Text")
     Name.Visible = false
     Name.Color = Color3.fromRGB(255, 255, 255)
     Name.Size = 14
     Name.Center = true
+    Name.Outline = true
+
+    local Dist = Drawing.new("Text")
+    Dist.Visible = false
+    Dist.Color = Color3.fromRGB(255, 255, 255)
+    Dist.Size = 12
+    Dist.Center = true
+    Dist.Outline = true
+
     local Tracer = Drawing.new("Line")
     Tracer.Visible = false
-    Tracer.Color = Color3.fromRGB(255, 255, 255)
     Tracer.Thickness = 1
 
-    ESPObjects[plr] = {Box = Box, Name = Name, Tracer = Tracer}
+    ESPObjects[plr] = {
+        Box = Box,
+        Corners = Corners,
+        HealthBar = HealthBar,
+        HealthOutline = HealthOutline,
+        Name = Name,
+        Dist = Dist,
+        Tracer = Tracer
+    }
 end
 
 Players.PlayerAdded:Connect(CreateESP)
 Players.PlayerRemoving:Connect(function(plr)
     if ESPObjects[plr] then
-        ESPObjects[plr].Box:Remove()
-        ESPObjects[plr].Name:Remove()
-        ESPObjects[plr].Tracer:Remove()
+        for _, obj in pairs(ESPObjects[plr]) do
+            if typeof(obj) == "table" then
+                for _, subObj in pairs(obj) do subObj:Remove() end
+            else
+                obj:Remove()
+            end
+        end
         ESPObjects[plr] = nil
     end
 end)
@@ -447,14 +529,25 @@ RunService.RenderStepped:Connect(function()
     end
 
     -- Hitbox Expander Logic
-    if HitboxSettings.Enabled then
-        for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer and player.Character then
-                local part = player.Character:FindFirstChild(AimbotSettings.TargetPart) or player.Character:FindFirstChild("HumanoidRootPart")
-                if part and player.Team ~= LocalPlayer.Team then
-                   part.Size = Vector3.new(HitboxSettings.Size, HitboxSettings.Size, HitboxSettings.Size)
-                   part.Transparency = 0.7
-                   part.CanCollide = false
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character then
+            local part = player.Character:FindFirstChild(AimbotSettings.TargetPart) or player.Character:FindFirstChild("HumanoidRootPart")
+            if part and player.Team ~= LocalPlayer.Team then
+                if HitboxSettings.Enabled then
+                    if not part:FindFirstChild("OriginalSize") then
+                        local s = Instance.new("Vector3Value", part); s.Name = "OriginalSize"; s.Value = part.Size
+                        local t = Instance.new("NumberValue", part); t.Name = "OriginalTransparency"; t.Value = part.Transparency
+                    end
+                    part.Size = Vector3.new(HitboxSettings.Size, HitboxSettings.Size, HitboxSettings.Size)
+                    part.Transparency = 0.7
+                    part.CanCollide = false
+                else
+                    if part:FindFirstChild("OriginalSize") then
+                        part.Size = part.OriginalSize.Value
+                        part.Transparency = part.OriginalTransparency.Value
+                        part.OriginalSize:Destroy()
+                        part.OriginalTransparency:Destroy()
+                    end
                 end
             end
         end
@@ -462,38 +555,92 @@ RunService.RenderStepped:Connect(function()
 
     -- ESP Logic
     for plr, objects in pairs(ESPObjects) do
-        if ESPSettings.Enabled and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character.Humanoid.Health > 0 then
-            local RootPart = plr.Character.HumanoidRootPart
-            local pos, onScreen = Camera:WorldToViewportPoint(RootPart.Position)
+        if ESPSettings.Enabled and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChild("Humanoid") and plr.Character.Humanoid.Health > 0 then
+            local char = plr.Character
+            local root = char.HumanoidRootPart
+            local head = char:FindFirstChild("Head")
+            if not head then continue end
+
+            local pos, onScreen = Camera:WorldToViewportPoint(root.Position)
             if onScreen then
+                local color = (ESPSettings.Teams and plr.TeamColor.Color) or Color3.fromRGB(255, 0, 0)
+                local headPos = Camera:WorldToViewportPoint(head.Position + Vector3.new(0, 0.5, 0))
+                local legPos = Camera:WorldToViewportPoint(root.Position - Vector3.new(0, 3, 0))
+                local height = math.abs(headPos.Y - legPos.Y)
+                local width = height / 1.5
+                local x = pos.X - width / 2
+                local y = headPos.Y
+
+                -- Box ESP
                 if ESPSettings.Boxes then
-                    objects.Box.Size = Vector2.new(2000 / pos.Z, 2000 / pos.Z)
-                    objects.Box.Position = Vector2.new(pos.X - objects.Box.Size.X / 2, pos.Y - objects.Box.Size.Y / 2)
+                    objects.Box.Size = Vector2.new(width, height)
+                    objects.Box.Position = Vector2.new(x, y)
+                    objects.Box.Color = color
                     objects.Box.Visible = true
                 else objects.Box.Visible = false end
 
+                -- Corner Box ESP
+                if ESPSettings.CornerBoxes then
+                    local lineLen = width / 4
+                    objects.Corners[1].From = Vector2.new(x, y); objects.Corners[1].To = Vector2.new(x + lineLen, y)
+                    objects.Corners[2].From = Vector2.new(x, y); objects.Corners[2].To = Vector2.new(x, y + lineLen)
+                    objects.Corners[3].From = Vector2.new(x + width, y); objects.Corners[3].To = Vector2.new(x + width - lineLen, y)
+                    objects.Corners[4].From = Vector2.new(x + width, y); objects.Corners[4].To = Vector2.new(x + width, y + lineLen)
+                    objects.Corners[5].From = Vector2.new(x, y + height); objects.Corners[5].To = Vector2.new(x + lineLen, y + height)
+                    objects.Corners[6].From = Vector2.new(x, y + height); objects.Corners[6].To = Vector2.new(x, y + height - lineLen)
+                    objects.Corners[7].From = Vector2.new(x + width, y + height); objects.Corners[7].To = Vector2.new(x + width - lineLen, y + height)
+                    objects.Corners[8].From = Vector2.new(x + width, y + height); objects.Corners[8].To = Vector2.new(x + width, y + height - lineLen)
+                    for _, c in pairs(objects.Corners) do c.Color = color; c.Visible = true end
+                else for _, c in pairs(objects.Corners) do c.Visible = false end end
+
+                -- Health Bar
+                if ESPSettings.HealthBar then
+                    local health = char.Humanoid.Health
+                    local maxHealth = char.Humanoid.MaxHealth
+                    local hHeight = (health / maxHealth) * height
+                    local hColor = Color3.fromHSV(math.clamp(health/maxHealth, 0, 1) * 0.4, 1, 1)
+
+                    objects.HealthOutline.From = Vector2.new(x - 5, y)
+                    objects.HealthOutline.To = Vector2.new(x - 5, y + height)
+                    objects.HealthOutline.Visible = true
+
+                    objects.HealthBar.From = Vector2.new(x - 5, y + height)
+                    objects.HealthBar.To = Vector2.new(x - 5, y + height - hHeight)
+                    objects.HealthBar.Color = hColor
+                    objects.HealthBar.Visible = true
+                else objects.HealthBar.Visible = false; objects.HealthOutline.Visible = false end
+
+                -- Names & Distance
                 if ESPSettings.Names then
                     objects.Name.Text = plr.Name
-                    objects.Name.Position = Vector2.new(pos.X, pos.Y - 40)
+                    objects.Name.Position = Vector2.new(pos.X, y - 20)
                     objects.Name.Visible = true
                 else objects.Name.Visible = false end
 
+                if ESPSettings.Distance then
+                    local distance = math.floor((Camera.CFrame.Position - root.Position).Magnitude)
+                    objects.Dist.Text = tostring(distance) .. "m"
+                    objects.Dist.Position = Vector2.new(pos.X, y + height + 5)
+                    objects.Dist.Visible = true
+                else objects.Dist.Visible = false end
+
+                -- Tracers
                 if ESPSettings.Tracers then
                     objects.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
-                    objects.Tracer.To = Vector2.new(pos.X, pos.Y)
+                    objects.Tracer.To = Vector2.new(pos.X, legPos.Y)
+                    objects.Tracer.Color = color
                     objects.Tracer.Visible = true
                 else objects.Tracer.Visible = false end
             else
-                objects.Box.Visible = false; objects.Name.Visible = false; objects.Tracer.Visible = false
+                for _, obj in pairs(objects) do if typeof(obj) == "table" then for _, c in pairs(obj) do c.Visible = false end else obj.Visible = false end end
             end
         else
-            objects.Box.Visible = false; objects.Name.Visible = false; objects.Tracer.Visible = false
+            for _, obj in pairs(objects) do if typeof(obj) == "table" then for _, c in pairs(obj) do c.Visible = false end else obj.Visible = false end end
         end
     end
 end)
 
 RunService.Stepped:Connect(function()
-    ApplyWeaponMods()
     if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
         LocalPlayer.Character.Humanoid.WalkSpeed = MovementSettings.WalkSpeed
         LocalPlayer.Character.Humanoid.JumpPower = MovementSettings.JumpPower
@@ -514,21 +661,30 @@ RunService.Stepped:Connect(function()
                 LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Running)
             end
         end
+
+        if MovementSettings.Spinbot then
+            LocalPlayer.Character.HumanoidRootPart.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame * CFrame.Angles(0, math.rad(20), 0)
+        end
     end
 
     -- Movement / Vehicle Logic
     if MovementSettings.Fly and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local root = LocalPlayer.Character.HumanoidRootPart
-        bodyGyro.Parent = root; bodyVelocity.Parent = root
-        bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9); bodyGyro.P = 9e4; bodyGyro.CFrame = Camera.CFrame
+        local humanoid = LocalPlayer.Character.Humanoid
+
+        humanoid.PlatformStand = true
         local moveDir = Vector3.new(0,0,0)
         if UserInputService:IsKeyDown(Enum.KeyCode.W) then moveDir = moveDir + Camera.CFrame.LookVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.S) then moveDir = moveDir - Camera.CFrame.LookVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.A) then moveDir = moveDir - Camera.CFrame.RightVector end
         if UserInputService:IsKeyDown(Enum.KeyCode.D) then moveDir = moveDir + Camera.CFrame.RightVector end
-        bodyVelocity.Velocity = moveDir * MovementSettings.FlySpeed
-    else
-        bodyGyro.Parent = nil; bodyVelocity.Parent = nil
+        if UserInputService:IsKeyDown(Enum.KeyCode.Space) then moveDir = moveDir + Vector3.new(0,1,0) end
+        if UserInputService:IsKeyDown(Enum.KeyCode.LeftShift) then moveDir = moveDir - Vector3.new(0,1,0) end
+
+        root.Velocity = Vector3.new(0,0,0)
+        root.CFrame = root.CFrame + (moveDir * (MovementSettings.FlySpeed / 50))
+    elseif LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid.PlatformStand = false
     end
 
     if MovementSettings.VehicleFly or MovementSettings.VehicleSpeed > 50 then
@@ -583,6 +739,12 @@ mt.__index = newcclosure(function(self, idx)
     return oldIndex(self, idx)
 end)
 setreadonly(mt, true)
+
+UserInputService.JumpRequest:Connect(function()
+    if MovementSettings.InfJump and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        LocalPlayer.Character.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+    end
+end)
 
 UserInputService.InputBegan:Connect(function(input, processed)
     if not processed and ClickTPEnabled and input.UserInputType == Enum.UserInputType.MouseButton1 and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then
