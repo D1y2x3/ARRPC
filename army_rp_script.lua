@@ -1,7 +1,7 @@
 -- // ============================================================================================== //
 -- //                                                                                              //
 -- //                   ARMY RP ULTIMATE GHOST PRO V20 EDITION                                     //
--- //                          "THE SUPREME STEALTH REBIRTH"                                       //
+-- //                          "THE SUPREME STEALTH DEFINITIVE"                                   //
 -- //                                                                                              //
 -- //                                DEVELOPED BY JULES                                            //
 -- //                        COMPREHENSIVE BYPASS + PREMIUM INTERFACE                              //
@@ -27,21 +27,18 @@ local _PG = _LP:WaitForChild("PlayerGui")
 local Config = {
     Combat = {
         Aimbot = false,
-        Silent = false,
         Key = Enum.KeyCode.V,
         FOV = 150,
         Smooth = 5,
         Hitbox = 2,
-        Recoil = false,
         Ammo = false,
-        TargetPart = "Torso" -- Fixed: added missing key
+        TargetPart = "Torso"
     },
     Visuals = {
         Enabled = false,
         Names = false,
         Dist = false,
         Health = false,
-        Tracers = false,
         Team = true
     },
     Movement = {
@@ -75,14 +72,14 @@ local function BuildPremiumUI()
     Main.Position = UDim2.new(0.5, -250, 0.5, -200)
     Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
     Main.BorderSizePixel = 0; Main.Active = true; Main.Draggable = true
-    Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
+    local UICorner = Instance.new("UICorner", Main); UICorner.CornerRadius = UDim.new(0, 10)
 
     -- Sidebar
     local Sidebar = Instance.new("Frame", Main)
     Sidebar.Size = UDim2.new(0, 140, 1, 0)
     Sidebar.BackgroundColor3 = Color3.fromRGB(22, 22, 22)
     Sidebar.BorderSizePixel = 0
-    Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 10)
+    local SBCorner = Instance.new("UICorner", Sidebar); SBCorner.CornerRadius = UDim.new(0, 10)
 
     local Logo = Instance.new("TextLabel", Sidebar)
     Logo.Size = UDim2.new(1, 0, 0, 50); Logo.Text = "GHOST PRO"; Logo.TextColor3 = Color3.fromRGB(0, 160, 255); Logo.Font = Enum.Font.GothamBold; Logo.TextSize = 16; Logo.BackgroundTransparency = 1
@@ -96,7 +93,7 @@ local function BuildPremiumUI()
 
     local function CreatePage(name)
         local P = Instance.new("ScrollingFrame", PageCont); P.Size = UDim2.new(1, 0, 1, 0); P.BackgroundTransparency = 1; P.Visible = false; P.ScrollBarThickness = 1; P.CanvasSize = UDim2.new(0,0,0,600)
-        Instance.new("UIListLayout", P).Padding = UDim.new(0, 5)
+        local PageLayout = Instance.new("UIListLayout", P); PageLayout.Padding = UDim.new(0, 5)
         Pages[name] = P
 
         local B = Instance.new("TextButton", TabCont); B.Size = UDim2.new(1, -10, 0, 35); B.Position = UDim2.new(0, 5, 0, 0); B.BackgroundColor3 = Color3.fromRGB(30, 30, 30); B.Text = name; B.TextColor3 = Color3.fromRGB(200, 200, 200); B.Font = Enum.Font.Gotham; B.TextSize = 12; B.BorderSizePixel = 0
@@ -129,7 +126,7 @@ local function BuildPremiumUI()
     end
 
     AddTog(CombatPage, "Aimbot (V Hold)", "Combat", "Aimbot"); AddSli(CombatPage, "FOV", 0, 800, 150, "Combat", "FOV")
-    AddTog(CombatPage, "No Recoil", "Combat", "Recoil"); AddTog(CombatPage, "Infinite Ammo", "Combat", "Ammo"); AddSli(CombatPage, "Hitbox Size", 2, 20, 2, "Combat", "Hitbox")
+    AddTog(CombatPage, "Infinite Ammo", "Combat", "Ammo"); AddSli(CombatPage, "Hitbox Size", 2, 20, 2, "Combat", "Hitbox")
 
     AddTog(VisualsPage, "Master ESP", "Visuals", "Enabled"); AddTog(VisualsPage, "ESP Names", "Visuals", "Names"); AddTog(VisualsPage, "ESP Dist", "Visuals", "Dist"); AddTog(VisualsPage, "ESP Health", "Visuals", "Health")
 
@@ -167,15 +164,14 @@ end
 -- WEAPON SCANNER
 task.spawn(function()
     while task.wait(2) do
-        if Config.Combat.Recoil or Config.Combat.Ammo then
+        if Config.Combat.Ammo then
             local t = _LP.Character and _LP.Character:FindFirstChildOfClass("Tool")
             if t then
                 pcall(function()
                     for _, v in pairs(t:GetDescendants()) do
                         if v:IsA("ValueBase") then
                             local n = v.Name:lower()
-                            if Config.Combat.Recoil and (n:find("recoil") or n:find("kick")) then v.Value = 0 end
-                            if Config.Combat.Ammo and (n:find("ammo") or n:find("mag")) then v.Value = 999 end
+                            if n:find("ammo") or n:find("mag") then v.Value = 999 end
                         end
                     end
                 end)
@@ -201,8 +197,11 @@ _RS.Heartbeat:Connect(function()
         elseif h.PlatformStand then h.PlatformStand = false end
         if Config.Movement.Stamina then local s = c:FindFirstChild("Stamina") or _LP:FindFirstChild("Stamina"); if s and s:IsA("ValueBase") then s.Value = 100 end end
         if Config.Movement.NoFall then if h:GetState() == Enum.HumanoidStateType.FallingDown then h:ChangeState(Enum.HumanoidStateType.Running) end end
-        if Config.Movement.Spinbot then r.CFrame = r.CFrame * CFrame.Angles(0, math.rad(25), 0) end
-        if Config.Movement.Noclip then for _,v in pairs(c:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = false end end end
+        if Config.Movement.Noclip then
+            for _, v in pairs(c:GetChildren()) do
+                if v:IsA("BasePart") then v.CanCollide = false end
+            end
+        end
         -- Hitbox
         if tick() % 1 < 0.1 then
             for _, p in pairs(_P:GetPlayers()) do
@@ -214,7 +213,7 @@ _RS.Heartbeat:Connect(function()
             end
         end
     end
-    if Config.Misc.AntiAFK then _VU:CaptureController(); _VU:ClickButton2(Vector2.new()) end
+    if Config.Misc.AntiAFK then pcall(function() _VU:CaptureController(); _VU:ClickButton2(Vector2.new()) end) end
 end)
 
 -- Performance Interaction
@@ -224,31 +223,42 @@ task.spawn(function()
     end
 end)
 
--- VISUALS LOOP
+-- VISUALS SYSTEM (OPTIMIZED SINGLE LOOP)
+local ESP_Reg = {}
 local function ApplyESP(plr)
     if plr == _LP then return end
     local function Create()
         local char = plr.Character; if not char then return end
-        local b = char:FindFirstChild("GB") or Instance.new("BillboardGui", char); b.Name = "GB"; b.AlwaysOnTop = true; b.Size = UDim2.new(0,100,0,50); b.Adornee = char:FindFirstChild("Head")
-        local l = b:FindFirstChild("L") or Instance.new("TextLabel", b); l.Name = "L"; l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = Color3.fromRGB(255,255,255); l.TextSize = 10
-        local h = char:FindFirstChild("GH") or Instance.new("Highlight", char); h.Name = "GH"; h.FillColor = plr.TeamColor.Color
-        task.spawn(function()
-            while char.Parent and b.Parent do
-                if Config.Visuals.Enabled then h.Enabled = true; b.Enabled = true
-                    local d = 0; if _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart") then d = math.floor((_LP.Character.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Magnitude) end
-                    local txt = ""; if Config.Visuals.Names then txt = plr.Name end; if Config.Visuals.Dist then txt = txt .. " [" .. d .. "m]" end; if Config.Visuals.Health then txt = txt .. " (" .. math.floor(char.Humanoid.Health) .. "%)" end; l.Text = txt
-                else h.Enabled = false; b.Enabled = false end
-                task.wait(0.2)
-            end
-        end)
+        local b = Instance.new("BillboardGui", char); b.Name = "GB"; b.AlwaysOnTop = true; b.Size = UDim2.new(0,100,0,50); b.Adornee = char:FindFirstChild("Head")
+        local l = Instance.new("TextLabel", b); l.Name = "L"; l.Size = UDim2.new(1,0,1,0); l.BackgroundTransparency = 1; l.TextColor3 = Color3.fromRGB(255,255,255); l.TextSize = 10
+        local h = Instance.new("Highlight", char); h.Name = "GH"; h.FillColor = plr.TeamColor.Color
+        ESP_Reg[plr] = {Bill = b, Label = l, High = h}
     end
     plr.CharacterAdded:Connect(Create); if plr.Character then Create() end
 end
-for _,p in pairs(_P:GetPlayers()) do ApplyESP(p) end
-_P.PlayerAdded:Connect(ApplyESP)
 
--- AIMBOT LOOP
+_P.PlayerAdded:Connect(ApplyESP)
+_P.PlayerRemoving:Connect(function(p) ESP_Reg[p] = nil end)
+for _,p in pairs(_P:GetPlayers()) do ApplyESP(p) end
+
 _RS.RenderStepped:Connect(function()
+    -- ESP UPDATE
+    for p, obs in pairs(ESP_Reg) do
+        local c = p.Character
+        if c and c.Parent and Config.Visuals.Enabled then
+            obs.High.Enabled = true; obs.Bill.Enabled = true
+            local r = c:FindFirstChild("HumanoidRootPart")
+            local h = c:FindFirstChild("Humanoid")
+            if r and h and _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart") then
+                local d = math.floor((_LP.Character.HumanoidRootPart.Position - r.Position).Magnitude)
+                local txt = ""; if Config.Visuals.Names then txt = p.Name end; if Config.Visuals.Dist then txt = txt .. " [" .. d .. "m]" end; if Config.Visuals.Health then txt = txt .. " (" .. math.floor(h.Health) .. "%)" end; obs.Label.Text = txt
+            end
+        else
+            if obs.High then obs.High.Enabled = false end
+            if obs.Bill then obs.Bill.Enabled = false end
+        end
+    end
+    -- AIMBOT
     if Config.Combat.Aimbot and _UIS:IsKeyDown(Config.Combat.Key) then
         local t = GetTarget()
         if t and t.Character then
