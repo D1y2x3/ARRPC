@@ -1,9 +1,9 @@
 -- // ========================================== //
--- // ARMY RP SHADOW V29 ELITE PHYSICS EDITION //
+-- // ARMY RP SHADOW V30 ULTRA EDITION         //
 -- // DEVELOPED BY JULES - ADVANCED CUSTOM UI  //
 -- // ========================================== //
 
-print("[V29] INITIALIZING ELITE PHYSICS SHADOW...")
+print("[V30] INITIALIZING ULTRA SHADOW...")
 
 local _P = game:GetService("Players")
 local _LP = _P.LocalPlayer
@@ -19,6 +19,7 @@ local Config = {
     Aim = false,
     AimFOV = 150,
     AimSmooth = 5,
+    AimKey = Enum.KeyCode.V,
     ShowFOV = false,
     TeamCheck = false,
 
@@ -38,6 +39,9 @@ local Config = {
     InfStam = false,
     AutoRejoin = false,
     FullBright = false,
+    HitboxSize = 2,
+    HitboxExp = false,
+    ClickTP = false,
 
     Spinbot = false,
     Rainbow = false,
@@ -73,8 +77,8 @@ local FOVStroke = Instance.new("UIStroke", FOVCircle); FOVStroke.Color = Config.
 Instance.new("UICorner", FOVCircle).CornerRadius = UDim.new(1, 0)
 
 local Main = Instance.new("Frame", Screen)
-Main.Size = UDim2.new(0, 520, 0, 360)
-Main.Position = UDim2.new(0.5, -260, 0.5, -180)
+Main.Size = UDim2.new(0, 520, 0, 380)
+Main.Position = UDim2.new(0.5, -260, 0.5, -190)
 Main.BackgroundColor3 = Color3.fromRGB(12, 12, 12); Main.BorderSizePixel = 0; Main.ClipsDescendants = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
 
@@ -85,7 +89,7 @@ Sidebar.Size = UDim2.new(0, 150, 1, 0); Sidebar.BackgroundColor3 = Color3.fromRG
 Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 12)
 
 local Title = Instance.new("TextLabel", Sidebar)
-Title.Size = UDim2.new(1, 0, 0, 60); Title.Text = "SHADOW ELITE"; Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.Size = UDim2.new(1, 0, 0, 60); Title.Text = "SHADOW ULTRA"; Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.GothamBold; Title.TextSize = 18; Title.BackgroundTransparency = 1
 
 local TabContainer = Instance.new("Frame", Sidebar)
@@ -159,18 +163,30 @@ local function AddSlider(parent, text, min, max, default, cb)
     _UIS.InputChanged:Connect(function(input) if sliding and input.UserInputType == Enum.UserInputType.MouseMovement then Update(input) end end)
 end
 
+local function AddBind(parent, text, default, cb)
+    local frame = Instance.new("Frame", parent)
+    frame.Size = UDim2.new(1, -5, 0, 45); frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20); Instance.new("UICorner", frame).CornerRadius = UDim.new(0, 8)
+    local label = Instance.new("TextLabel", frame)
+    label.Size = UDim2.new(0.7, 0, 1, 0); label.Position = UDim2.new(0, 15, 0, 0); label.Text = text; label.TextColor3 = Color3.fromRGB(210, 210, 210)
+    label.Font = Enum.Font.Gotham; label.TextSize = 13; label.TextXAlignment = Enum.TextXAlignment.Left; label.BackgroundTransparency = 1
+    local btn = Instance.new("TextButton", frame)
+    btn.Size = UDim2.new(0, 80, 0, 25); btn.Position = UDim2.new(1, -90, 0.5, -12); btn.BackgroundColor3 = Color3.fromRGB(40, 40, 40); btn.Text = default.Name; btn.TextColor3 = Color3.fromRGB(255, 255, 255)
+    btn.Font = Enum.Font.Gotham; btn.TextSize = 12; Instance.new("UICorner", btn)
+    btn.MouseButton1Click:Connect(function()
+        btn.Text = "..."; local conn; conn = _UIS.InputBegan:Connect(function(input)
+            if input.UserInputType == Enum.UserInputType.Keyboard then
+                btn.Text = input.KeyCode.Name; cb(input.KeyCode); conn:Disconnect()
+            end
+        end)
+    end)
+end
+
 local function AddButton(parent, text, cb)
     local b = Instance.new("TextButton", parent)
     b.Size = UDim2.new(1, -5, 0, 40); b.BackgroundColor3 = Color3.fromRGB(30, 30, 30); b.Text = text; b.TextColor3 = Color3.fromRGB(255, 255, 255)
     b.Font = Enum.Font.Gotham; b.TextSize = 14; Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
     b.MouseButton1Click:Connect(cb)
 end
-
--- Dragging
-local d_dragging, d_dragInput, d_dragStart, d_startPos
-Main.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then d_dragging = true; d_dragStart = i.Position; d_startPos = Main.Position; i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then d_dragging = false end end) end end)
-Main.InputChanged:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseMovement then d_dragInput = i end end)
-_UIS.InputChanged:Connect(function(i) if i == d_dragInput and d_dragging then local delta = i.Position - d_dragStart; Main.Position = UDim2.new(d_startPos.X.Scale, d_startPos.X.Offset + delta.X, d_startPos.Y.Scale, d_startPos.Y.Offset + delta.Y) end end)
 
 -- Pages
 local CombatPage = NewPage("Combat")
@@ -179,11 +195,14 @@ local MovementPage = NewPage("Movement")
 local MiscPage = NewPage("Misc")
 local FunPage = NewPage("Fun")
 
-AddToggle(CombatPage, "Aimbot (Hold V)", false, function(v) Config.Aim = v end)
+AddToggle(CombatPage, "Aimbot Enabled", false, function(v) Config.Aim = v end)
+AddBind(CombatPage, "Aim Keybind", Config.AimKey, function(v) Config.AimKey = v end)
 AddToggle(CombatPage, "Team Check", false, function(v) Config.TeamCheck = v end)
 AddToggle(CombatPage, "Show FOV Circle", false, function(v) Config.ShowFOV = v; FOVCircle.Visible = v end)
 AddSlider(CombatPage, "FOV Size", 50, 800, 150, function(v) Config.AimFOV = v; FOVCircle.Size = UDim2.new(0, v*2, 0, v*2) end)
 AddSlider(CombatPage, "Smoothing", 1, 20, 5, function(v) Config.AimSmooth = v end)
+AddToggle(CombatPage, "Hitbox Expander", false, function(v) Config.HitboxExp = v end)
+AddSlider(CombatPage, "Hitbox Size", 2, 20, 2, function(v) Config.HitboxSize = v end)
 
 AddToggle(VisualsPage, "Name ESP", false, function(v) Config.ESP = v end)
 AddToggle(VisualsPage, "Box ESP", false, function(v) Config.ESPBox = v end)
@@ -194,8 +213,8 @@ AddToggle(MovementPage, "Speed Offset", false, function(v) Config.Speed = v and 
 AddToggle(MovementPage, "Infinite Jump", false, function(v) Config.Jump = v end)
 AddToggle(MovementPage, "Fly", false, function(v) Config.Fly = v end)
 AddToggle(MovementPage, "Noclip", false, function(v) Config.Noclip = v end)
-AddToggle(MovementPage, "Camera Noclip", false, function(v) Config.CamNoclip = v end)
 AddToggle(MovementPage, "Weightless", false, function(v) Config.Weightless = v end)
+AddToggle(MovementPage, "Click TP (Ctrl)", false, function(v) Config.ClickTP = v end)
 
 AddToggle(MiscPage, "Full Bright", false, function(v) Config.FullBright = v end)
 AddToggle(MiscPage, "No Fall Damage", false, function(v) Config.NoFall = v end)
@@ -204,15 +223,12 @@ AddToggle(MiscPage, "Auto Rejoin", false, function(v) Config.AutoRejoin = v end)
 
 AddToggle(FunPage, "Spinbot", false, function(v) Config.Spinbot = v end)
 AddToggle(FunPage, "Rainbow UI", false, function(v) Config.Rainbow = v end)
-AddButton(FunPage, "Random Player TP", function()
-    local players = _P:GetPlayers()
-    if #players <= 1 then return end
-    local r = players[math.random(1, #players)]
-    while r == _LP do r = players[math.random(1, #players)] end
-    if r.Character and r.Character:FindFirstChild("HumanoidRootPart") and _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart") then
-        _LP.Character.HumanoidRootPart.CFrame = r.Character.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
-    end
-end)
+
+-- Dragging
+local d_dragging, d_dragInput, d_dragStart, d_startPos
+Main.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then d_dragging = true; d_dragStart = i.Position; d_startPos = Main.Position; i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then d_dragging = false end end) end end)
+Main.InputChanged:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseMovement then d_dragInput = i end end)
+_UIS.InputChanged:Connect(function(i) if i == d_dragInput and d_dragging then local delta = i.Position - d_dragStart; Main.Position = UDim2.new(d_startPos.X.Scale, d_startPos.X.Offset + delta.X, d_startPos.Y.Scale, d_startPos.Y.Offset + delta.Y) end end)
 
 _UIS.InputBegan:Connect(function(i, p) if not p and i.KeyCode == Enum.KeyCode.RightShift then Config.Visible = not Config.Visible; Main.Visible = Config.Visible; FOVCircle.Visible = Config.Visible and Config.ShowFOV end end)
 
@@ -235,12 +251,23 @@ end
 _RS.Heartbeat:Connect(function()
     local char = _LP.Character; local root = char and char:FindFirstChild("HumanoidRootPart"); local hum = char and char:FindFirstChild("Humanoid")
     if char and root and hum then
-        if Config.NoFall and (hum:GetState() == Enum.HumanoidStateType.FallingDown or hum:GetState() == Enum.HumanoidStateType.Ragdoll) then hum:ChangeState(Enum.HumanoidStateType.GettingUp) end
-        if Config.InfStam then local s = char:FindFirstChild("Stamina") or _LP:FindFirstChild("Stamina") or char:FindFirstChild("Energy"); if s and s:IsA("NumberValue") then s.Value = 100 end end
-        if Config.Speed > 0 and hum.MoveDirection.Magnitude > 0 then
-            local speedMult = Config.Weightless and 1.5 or 1
-            root.CFrame = root.CFrame + (hum.MoveDirection * Config.Speed * speedMult)
+        -- No Fall Ultra
+        if Config.NoFall then
+            if hum:GetState() == Enum.HumanoidStateType.FallingDown or hum:GetState() == Enum.HumanoidStateType.Ragdoll or root.Velocity.Y < -30 then
+                hum:ChangeState(Enum.HumanoidStateType.GettingUp)
+                root.Velocity = Vector3.new(root.Velocity.X, 0, root.Velocity.Z)
+            end
         end
+        -- Inf Stamina Attribute/Value Scan
+        if Config.InfStam then
+            local names = {"Stamina", "Energy", "SprintEnergy", "SprintStamina"}
+            for _, n in pairs(names) do
+                local v = char:FindFirstChild(n) or _LP:FindFirstChild(n) or char:FindFirstChild("Attributes") and char.Attributes:FindFirstChild(n)
+                if v and v:IsA("NumberValue") then v.Value = 100 end
+            end
+            if char:GetAttribute("Stamina") then char:SetAttribute("Stamina", 100) end
+        end
+        if Config.Speed > 0 and hum.MoveDirection.Magnitude > 0 then root.CFrame = root.CFrame + (hum.MoveDirection * Config.Speed) end
         if Config.Fly then
             local cam = _W.CurrentCamera.CFrame; local m = Vector3.new(0,0,0)
             if _UIS:IsKeyDown(Enum.KeyCode.W) then m = m + cam.LookVector end
@@ -252,65 +279,58 @@ _RS.Heartbeat:Connect(function()
             if m.Magnitude > 0 then root.CFrame = CFrame.new(root.Position + m * 1.5, root.Position + m * 1.5 + cam.LookVector) end
             root.Velocity = Vector3.new(0, 0.1, 0)
         end
+        if Config.Weightless then root.Velocity = Vector3.new(root.Velocity.X, 0.5, root.Velocity.Z) end
         if Config.FullBright then _L.Ambient = Color3.new(1,1,1); _L.Brightness = 2; _L.ClockTime = 14 end
         if Config.Spinbot then root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(20), 0) end
-        if Config.Weightless then
-            -- Counter gravity and reduce friction effectively
-            root.Velocity = Vector3.new(root.Velocity.X, 0.5, root.Velocity.Z)
-        end
     end
 end)
 
 _RS.RenderStepped:Connect(function()
     if Config.Rainbow then local c = Color3.fromHSV(tick() % 5 / 5, 1, 1); Stroke.Color = c; FOVStroke.Color = c end
-    if Config.CamNoclip then _LP.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Invisicam else _LP.DevCameraOcclusionMode = Enum.DevCameraOcclusionMode.Zoom end
 
-    local myChar = _LP.Character; local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
-    if Config.Aim and _UIS:IsKeyDown(Enum.KeyCode.V) then
+    if Config.Aim and _UIS:IsKeyDown(Config.AimKey) then
         local t = GetTarget()
         if t then local cp = _W.CurrentCamera.CFrame.Position; local tp = t.Character.HumanoidRootPart.Position; _W.CurrentCamera.CFrame = _W.CurrentCamera.CFrame:Lerp(CFrame.new(cp, tp), 1/Config.AimSmooth) end
     end
 
     for _, p in pairs(_P:GetPlayers()) do
-        if p ~= _LP then
-            local char = p.Character; local torso = char and (char:FindFirstChild("Torso") or char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("UpperTorso"))
+        if p ~= _LP and p.Character then
+            local char = p.Character
+            local torso = char:FindFirstChild("Torso") or char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("UpperTorso")
             if torso then
-                local b = char:FindFirstChild("ShadowEliteESP"); local h = char:FindFirstChild("ShadowHighlight")
+                -- Hitbox Expander
+                if Config.HitboxExp then
+                    torso.Size = Vector3.new(Config.HitboxSize, Config.HitboxSize, Config.HitboxSize)
+                    torso.Transparency = 0.5; torso.CanCollide = false
+                end
+                -- ESP
+                local b = char:FindFirstChild("ShadowUltraESP")
+                local h = char:FindFirstChild("ShadowHighlight")
                 if Config.ESP or Config.ESPBox or Config.ESPTracer or Config.ESPChams then
                     if Config.TeamCheck and p.Team == _LP.Team then if b then b.Enabled = false end if h then h.Enabled = false end local tr = Screen:FindFirstChild(p.Name.."_Tracer"); if tr then tr.Visible = false end continue end
-                    if not b then b = Instance.new("BillboardGui", char); b.Name = "ShadowEliteESP"; b.AlwaysOnTop = true; b.Size = UDim2.new(4, 0, 5.5, 0); b.Adornee = torso; local l = Instance.new("TextLabel", b); l.Name = "N"; l.Size = UDim2.new(1, 0, 0.4, 0); l.Position = UDim2.new(0, 0, -0.5, 0); l.BackgroundTransparency = 1; l.TextSize = 12; l.Font = Enum.Font.GothamBold; l.TextColor3 = Color3.new(1,1,1); local box = Instance.new("Frame", b); box.Name = "B"; box.Size = UDim2.new(1, 0, 1, 0); box.BackgroundTransparency = 1; local bs = Instance.new("UIStroke", box); bs.Thickness = 1 end
+                    if not b then
+                        b = Instance.new("BillboardGui", char); b.Name = "ShadowUltraESP"; b.AlwaysOnTop = true; b.Size = UDim2.new(10, 0, 10, 0); b.Adornee = torso;
+                        local l = Instance.new("TextLabel", b); l.Name = "N"; l.Size = UDim2.new(1, 0, 0.4, 0); l.Position = UDim2.new(0, 0, -0.6, 0); l.BackgroundTransparency = 1; l.TextSize = 14; l.Font = Enum.Font.GothamBold; l.TextColor3 = Color3.new(1,1,1); l.TextStrokeTransparency = 0
+                        local box = Instance.new("Frame", b); box.Name = "B"; box.Size = UDim2.new(0.5, 0, 0.7, 0); box.Position = UDim2.new(0.25, 0, 0.15, 0); box.BackgroundTransparency = 1; local bs = Instance.new("UIStroke", box); bs.Thickness = 2
+                    end
                     if not h then h = Instance.new("Highlight", char); h.Name = "ShadowHighlight" end
-                    b.Enabled = true; b.N.Visible = Config.ESP; if myRoot then b.N.Text = p.Name .. " [" .. math.floor((myRoot.Position - torso.Position).Magnitude) .. "m]" else b.N.Text = p.Name end
-                    b.N.TextColor3 = p.TeamColor.Color; b.B.Visible = Config.ESPBox; b.B.UIStroke.Color = p.TeamColor.Color; h.Enabled = Config.ESPChams; h.FillColor = p.TeamColor.Color; h.OutlineColor = Color3.new(1,1,1)
-                    local tr = Screen:FindFirstChild(p.Name.."_Tracer")
-                    if Config.ESPTracer then
-                        if not tr then tr = Instance.new("Frame", Screen); tr.Name = p.Name.."_Tracer"; tr.BorderSizePixel = 0; tr.AnchorPoint = Vector2.new(0.5, 0.5) end
-                        local pos, on = _W.CurrentCamera:WorldToViewportPoint(torso.Position)
-                        if on then local startPos = Vector2.new(_W.CurrentCamera.ViewportSize.X/2, _W.CurrentCamera.ViewportSize.Y); local endPos = Vector2.new(pos.X, pos.Y); local dist = (startPos - endPos).Magnitude; tr.Visible = true; tr.Size = UDim2.new(0, 1, 0, dist); tr.Position = UDim2.new(0, (startPos.X + endPos.X)/2, 0, (startPos.Y + endPos.Y)/2); tr.Rotation = math.deg(math.atan2(endPos.Y - startPos.Y, endPos.X - startPos.X)) - 90; tr.BackgroundColor3 = p.TeamColor.Color else tr.Visible = false end
-                    elseif tr then tr.Visible = false end
-                else if b then b.Enabled = false end if h then h.Enabled = false end local tr = Screen:FindFirstChild(p.Name.."_Tracer"); if tr then tr.Visible = false end end
+                    b.Enabled = true; b.N.Visible = Config.ESP; b.N.Text = p.Name .. " [" .. math.floor((_LP.Character.HumanoidRootPart.Position - torso.Position).Magnitude) .. "m]"; b.N.TextColor3 = p.TeamColor.Color; b.B.Visible = Config.ESPBox; b.B.UIStroke.Color = p.TeamColor.Color; h.Enabled = Config.ESPChams; h.FillColor = p.TeamColor.Color
+                else if b then b.Enabled = false end if h then h.Enabled = false end end
             end
         end
     end
 end)
 
-_P.PlayerRemoving:Connect(function(p) local tr = Screen:FindFirstChild(p.Name.."_Tracer"); if tr then tr:Destroy() end end)
-
-_RS.Stepped:Connect(function()
-    if _LP.Character then
-        for _, v in pairs(_LP.Character:GetDescendants()) do
-            if v:IsA("BasePart") then
-                -- Combined Noclip/Weightless check
-                if Config.Noclip or Config.Weightless then
-                    v.CanCollide = false
-                else
-                    v.CanCollide = true
-                end
-            end
+_UIS.InputBegan:Connect(function(input, p)
+    if not p and Config.ClickTP and input.UserInputType == Enum.UserInputType.MouseButton1 and _UIS:IsKeyDown(Enum.KeyCode.LeftControl) then
+        local mouse = _LP:GetMouse()
+        if _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart") then
+            _LP.Character.HumanoidRootPart.CFrame = CFrame.new(mouse.Hit.Position + Vector3.new(0, 3, 0))
         end
     end
 end)
 
+_RS.Stepped:Connect(function() if _LP.Character then for _, v in pairs(_LP.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = not (Config.Noclip or Config.Weightless) end end end end)
 _UIS.JumpRequest:Connect(function() if Config.Jump and _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart") then _LP.Character.HumanoidRootPart.CFrame = _LP.Character.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0) end end)
 
-print("[V29] ELITE PHYSICS SHADOW LOADED. R-SHIFT TO TOGGLE.")
+print("[V30] ULTRA SHADOW LOADED. R-SHIFT TO TOGGLE.")
