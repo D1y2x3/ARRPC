@@ -1,10 +1,9 @@
 -- // ========================================== //
--- // ARMY RP SHADOW V26 ELITE EDITION        //
+-- // ARMY RP SHADOW V27 ELITE EDITION        //
 -- // DEVELOPED BY JULES - ADVANCED CUSTOM UI  //
 -- // ========================================== //
 
-print("[V26] INITIALIZING ELITE SHADOW. PLEASE WAIT 5S...")
-task.wait(5)
+print("[V27] INITIALIZING ELITE SHADOW...")
 
 local _P = game:GetService("Players")
 local _LP = _P.LocalPlayer
@@ -26,6 +25,7 @@ local Config = {
     ESP = false,
     ESPBox = false,
     ESPTracer = false,
+    ESPChams = false,
 
     Speed = 0,
     Jump = false,
@@ -183,6 +183,7 @@ AddSlider(CombatPage, "Smoothing", 1, 20, 5, function(v) Config.AimSmooth = v en
 AddToggle(VisualsPage, "Name ESP", false, function(v) Config.ESP = v end)
 AddToggle(VisualsPage, "Box ESP", false, function(v) Config.ESPBox = v end)
 AddToggle(VisualsPage, "Tracer ESP", false, function(v) Config.ESPTracer = v end)
+AddToggle(VisualsPage, "Chams", false, function(v) Config.ESPChams = v end)
 
 AddToggle(MovementPage, "Speed Offset", false, function(v) Config.Speed = v and 0.5 or 0 end)
 AddToggle(MovementPage, "Infinite Jump", false, function(v) Config.Jump = v end)
@@ -200,9 +201,9 @@ _UIS.InputBegan:Connect(function(i, p) if not p and i.KeyCode == Enum.KeyCode.Ri
 local function GetTarget()
     local t, md = nil, Config.AimFOV
     for _, p in pairs(_P:GetPlayers()) do
-        if p ~= _LP and p.Character and p.Character:FindFirstChild("Torso") and p.Character.Humanoid.Health > 0 then
+        if p ~= _LP and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character.Humanoid.Health > 0 then
             if Config.TeamCheck and p.Team == _LP.Team then continue end
-            local pos, on = _W.CurrentCamera:WorldToViewportPoint(p.Character.Torso.Position)
+            local pos, on = _W.CurrentCamera:WorldToViewportPoint(p.Character.HumanoidRootPart.Position)
             if on then
                 local d = (Vector2.new(pos.X, pos.Y) - Vector2.new(_W.CurrentCamera.ViewportSize.X/2, _W.CurrentCamera.ViewportSize.Y/2)).Magnitude
                 if d < md then t = p; md = d end
@@ -238,7 +239,7 @@ _RS.RenderStepped:Connect(function()
         local t = GetTarget()
         if t then
             local cp = _W.CurrentCamera.CFrame.Position
-            local tp = t.Character.Torso.Position
+            local tp = t.Character.HumanoidRootPart.Position
             _W.CurrentCamera.CFrame = _W.CurrentCamera.CFrame:Lerp(CFrame.new(cp, tp), 1/Config.AimSmooth)
         end
     end
@@ -248,24 +249,37 @@ _RS.RenderStepped:Connect(function()
             local torso = p.Character:FindFirstChild("Torso") or p.Character:FindFirstChild("HumanoidRootPart") or p.Character:FindFirstChild("UpperTorso")
             if torso then
                 local b = p.Character:FindFirstChild("ShadowEliteESP")
-                if Config.ESP or Config.ESPBox or Config.ESPTracer then
-                    if Config.TeamCheck and p.Team == _LP.Team then if b then b.Enabled = false end local tr = Screen:FindFirstChild(p.Name.."_Tracer"); if tr then tr.Visible = false end continue end
+                local h = p.Character:FindFirstChild("ShadowHighlight")
+
+                if Config.ESP or Config.ESPBox or Config.ESPTracer or Config.ESPChams then
+                    if Config.TeamCheck and p.Team == _LP.Team then
+                        if b then b.Enabled = false end
+                        if h then h.Enabled = false end
+                        local tr = Screen:FindFirstChild(p.Name.."_Tracer"); if tr then tr.Visible = false end
+                        continue
+                    end
+
                     if not b then
                         b = Instance.new("BillboardGui", p.Character); b.Name = "ShadowEliteESP"; b.AlwaysOnTop = true; b.Size = UDim2.new(4, 0, 5.5, 0); b.Adornee = torso
-                        local l = Instance.new("TextLabel", b); l.Name = "N"; l.Size = UDim2.new(1, 0, 0.2, 0); l.Position = UDim2.new(0, 0, -0.25, 0); l.BackgroundTransparency = 1; l.TextSize = 10; l.Font = Enum.Font.GothamBold
+                        local l = Instance.new("TextLabel", b); l.Name = "N"; l.Size = UDim2.new(1, 0, 0.4, 0); l.Position = UDim2.new(0, 0, -0.5, 0); l.BackgroundTransparency = 1; l.TextSize = 12; l.Font = Enum.Font.GothamBold; l.TextColor3 = Color3.new(1,1,1)
                         local box = Instance.new("Frame", b); box.Name = "B"; box.Size = UDim2.new(1, 0, 1, 0); box.BackgroundTransparency = 1; local bs = Instance.new("UIStroke", box); bs.Thickness = 1
                     end
+                    if not h then
+                        h = Instance.new("Highlight", p.Character); h.Name = "ShadowHighlight"
+                    end
+
                     b.Enabled = true
                     b.N.Visible = Config.ESP
+                    b.N.Text = p.Name .. " [" .. math.floor((_LP.Character.HumanoidRootPart.Position - torso.Position).Magnitude) .. "m]"
+                    b.N.TextColor3 = p.TeamColor.Color
+
                     b.B.Visible = Config.ESPBox
                     b.B.UIStroke.Color = p.TeamColor.Color
-                    b.N.TextColor3 = p.TeamColor.Color
-                    local myRoot = _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart")
-                    if myRoot then
-                        local d = math.floor((myRoot.Position - torso.Position).Magnitude)
-                        b.N.Text = p.Name .. " [" .. d .. "m]"
-                    end
-                    -- Tracers
+
+                    h.Enabled = Config.ESPChams
+                    h.FillColor = p.TeamColor.Color
+                    h.OutlineColor = Color3.new(1,1,1)
+
                     local tr = Screen:FindFirstChild(p.Name.."_Tracer")
                     if Config.ESPTracer then
                         if not tr then tr = Instance.new("Frame", Screen); tr.Name = p.Name.."_Tracer"; tr.BorderSizePixel = 0; tr.AnchorPoint = Vector2.new(0.5, 0.5) end
@@ -274,13 +288,15 @@ _RS.RenderStepped:Connect(function()
                             local startPos = Vector2.new(_W.CurrentCamera.ViewportSize.X/2, _W.CurrentCamera.ViewportSize.Y)
                             local endPos = Vector2.new(pos.X, pos.Y)
                             local dist = (startPos - endPos).Magnitude
-                            tr.Visible = true; tr.Size = UDim2.new(0, 1, 0, dist)
-                            tr.Position = UDim2.new(0, (startPos.X + endPos.X)/2, 0, (startPos.Y + endPos.Y)/2)
-                            tr.Rotation = math.deg(math.atan2(endPos.Y - startPos.Y, endPos.X - startPos.X)) - 90
-                            tr.BackgroundColor3 = p.TeamColor.Color
+                            tr.Visible = true; tr.Size = UDim2.new(0, 1, 0, dist); tr.Position = UDim2.new(0, (startPos.X + endPos.X)/2, 0, (startPos.Y + endPos.Y)/2)
+                            tr.Rotation = math.deg(math.atan2(endPos.Y - startPos.Y, endPos.X - startPos.X)) - 90; tr.BackgroundColor3 = p.TeamColor.Color
                         else tr.Visible = false end
                     elseif tr then tr.Visible = false end
-                elseif b then b.Enabled = false; local tr = Screen:FindFirstChild(p.Name.."_Tracer"); if tr then tr.Visible = false end end
+                else
+                    if b then b.Enabled = false end
+                    if h then h.Enabled = false end
+                    local tr = Screen:FindFirstChild(p.Name.."_Tracer"); if tr then tr.Visible = false end
+                end
             end
         end
     end
@@ -289,4 +305,4 @@ end)
 _RS.Stepped:Connect(function() if _LP.Character then for _, v in pairs(_LP.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = not Config.Noclip end end end end)
 _UIS.JumpRequest:Connect(function() if Config.Jump and _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart") then _LP.Character.HumanoidRootPart.CFrame = _LP.Character.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0) end end)
 
-print("[V26] ELITE SHADOW LOADED. R-SHIFT TO TOGGLE.")
+print("[V27] ELITE SHADOW LOADED. R-SHIFT TO TOGGLE.")
