@@ -1,9 +1,9 @@
 -- // ========================================== //
--- // ARMY RP SHADOW V27 ELITE EDITION        //
+-- // ARMY RP SHADOW V28 ELITE FUN EDITION     //
 -- // DEVELOPED BY JULES - ADVANCED CUSTOM UI  //
 -- // ========================================== //
 
-print("[V27] INITIALIZING ELITE SHADOW...")
+print("[V28] INITIALIZING ELITE FUN SHADOW...")
 
 local _P = game:GetService("Players")
 local _LP = _P.LocalPlayer
@@ -37,6 +37,9 @@ local Config = {
     AutoRejoin = false,
     FullBright = false,
 
+    Spinbot = false,
+    Rainbow = false,
+
     Visible = true,
     Accent = Color3.fromRGB(0, 170, 255),
     AccentSecondary = Color3.fromRGB(0, 80, 200)
@@ -63,28 +66,20 @@ local FOVCircle = Instance.new("Frame", Screen)
 FOVCircle.Size = UDim2.new(0, Config.AimFOV * 2, 0, Config.AimFOV * 2)
 FOVCircle.AnchorPoint = Vector2.new(0.5, 0.5)
 FOVCircle.Position = UDim2.new(0.5, 0, 0.5, 0)
-FOVCircle.BackgroundTransparency = 1
-FOVCircle.BorderSizePixel = 0
-FOVCircle.Visible = false
-local FOVStroke = Instance.new("UIStroke", FOVCircle)
-FOVStroke.Color = Config.Accent; FOVStroke.Thickness = 1; FOVStroke.Transparency = 0.5
+FOVCircle.BackgroundTransparency = 1; FOVCircle.BorderSizePixel = 0; FOVCircle.Visible = false
+local FOVStroke = Instance.new("UIStroke", FOVCircle); FOVStroke.Color = Config.Accent; FOVStroke.Thickness = 1; FOVStroke.Transparency = 0.5
 Instance.new("UICorner", FOVCircle).CornerRadius = UDim.new(1, 0)
 
 local Main = Instance.new("Frame", Screen)
 Main.Size = UDim2.new(0, 520, 0, 360)
 Main.Position = UDim2.new(0.5, -260, 0.5, -180)
-Main.BackgroundColor3 = Color3.fromRGB(12, 12, 12)
-Main.BorderSizePixel = 0
-Main.ClipsDescendants = true
+Main.BackgroundColor3 = Color3.fromRGB(12, 12, 12); Main.BorderSizePixel = 0; Main.ClipsDescendants = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 12)
 
-local Stroke = Instance.new("UIStroke", Main)
-Stroke.Color = Config.Accent; Stroke.Thickness = 2; Stroke.Transparency = 0.6
+local Stroke = Instance.new("UIStroke", Main); Stroke.Color = Config.Accent; Stroke.Thickness = 2; Stroke.Transparency = 0.6
 
 local Sidebar = Instance.new("Frame", Main)
-Sidebar.Size = UDim2.new(0, 150, 1, 0)
-Sidebar.BackgroundColor3 = Color3.fromRGB(8, 8, 8)
-Sidebar.BorderSizePixel = 0
+Sidebar.Size = UDim2.new(0, 150, 1, 0); Sidebar.BackgroundColor3 = Color3.fromRGB(8, 8, 8); Sidebar.BorderSizePixel = 0
 Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 12)
 
 local Title = Instance.new("TextLabel", Sidebar)
@@ -162,6 +157,13 @@ local function AddSlider(parent, text, min, max, default, cb)
     _UIS.InputChanged:Connect(function(input) if sliding and input.UserInputType == Enum.UserInputType.MouseMovement then Update(input) end end)
 end
 
+local function AddButton(parent, text, cb)
+    local b = Instance.new("TextButton", parent)
+    b.Size = UDim2.new(1, -5, 0, 40); b.BackgroundColor3 = Color3.fromRGB(30, 30, 30); b.Text = text; b.TextColor3 = Color3.fromRGB(255, 255, 255)
+    b.Font = Enum.Font.Gotham; b.TextSize = 14; Instance.new("UICorner", b).CornerRadius = UDim.new(0, 8)
+    b.MouseButton1Click:Connect(cb)
+end
+
 -- Dragging
 local d_dragging, d_dragInput, d_dragStart, d_startPos
 Main.InputBegan:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 then d_dragging = true; d_dragStart = i.Position; d_startPos = Main.Position; i.Changed:Connect(function() if i.UserInputState == Enum.UserInputState.End then d_dragging = false end end) end end)
@@ -173,6 +175,7 @@ local CombatPage = NewPage("Combat")
 local VisualsPage = NewPage("Visuals")
 local MovementPage = NewPage("Movement")
 local MiscPage = NewPage("Misc")
+local FunPage = NewPage("Fun")
 
 AddToggle(CombatPage, "Aimbot (Hold V)", false, function(v) Config.Aim = v end)
 AddToggle(CombatPage, "Team Check", false, function(v) Config.TeamCheck = v end)
@@ -194,6 +197,18 @@ AddToggle(MiscPage, "Full Bright", false, function(v) Config.FullBright = v end)
 AddToggle(MiscPage, "No Fall Damage", false, function(v) Config.NoFall = v end)
 AddToggle(MiscPage, "Infinite Stamina", false, function(v) Config.InfStam = v end)
 AddToggle(MiscPage, "Auto Rejoin", false, function(v) Config.AutoRejoin = v end)
+
+AddToggle(FunPage, "Spinbot", false, function(v) Config.Spinbot = v end)
+AddToggle(FunPage, "Rainbow UI", false, function(v) Config.Rainbow = v end)
+AddButton(FunPage, "Random Player TP", function()
+    local players = _P:GetPlayers()
+    if #players <= 1 then return end
+    local r = players[math.random(1, #players)]
+    while r == _LP do r = players[math.random(1, #players)] end
+    if r.Character and r.Character:FindFirstChild("HumanoidRootPart") and _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart") then
+        _LP.Character.HumanoidRootPart.CFrame = r.Character.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0)
+    end
+end)
 
 _UIS.InputBegan:Connect(function(i, p) if not p and i.KeyCode == Enum.KeyCode.RightShift then Config.Visible = not Config.Visible; Main.Visible = Config.Visible; FOVCircle.Visible = Config.Visible and Config.ShowFOV end end)
 
@@ -231,26 +246,34 @@ _RS.Heartbeat:Connect(function()
             root.Velocity = Vector3.new(0, 0.1, 0)
         end
         if Config.FullBright then _L.Ambient = Color3.new(1,1,1); _L.Brightness = 2; _L.ClockTime = 14 end
+        if Config.Spinbot then root.CFrame = root.CFrame * CFrame.Angles(0, math.rad(20), 0) end
     end
 end)
 
 _RS.RenderStepped:Connect(function()
+    if Config.Rainbow then
+        local c = Color3.fromHSV(tick() % 5 / 5, 1, 1)
+        Stroke.Color = c; FOVStroke.Color = c
+    end
+
+    local myChar = _LP.Character
+    local myRoot = myChar and myChar:FindFirstChild("HumanoidRootPart")
+
     if Config.Aim and _UIS:IsKeyDown(Enum.KeyCode.V) then
         local t = GetTarget()
         if t then
-            local cp = _W.CurrentCamera.CFrame.Position
-            local tp = t.Character.HumanoidRootPart.Position
+            local cp = _W.CurrentCamera.CFrame.Position; local tp = t.Character.HumanoidRootPart.Position
             _W.CurrentCamera.CFrame = _W.CurrentCamera.CFrame:Lerp(CFrame.new(cp, tp), 1/Config.AimSmooth)
         end
     end
-    -- Enhanced ESP
-    for _, p in pairs(_P:GetPlayers()) do
-        if p ~= _LP and p.Character then
-            local torso = p.Character:FindFirstChild("Torso") or p.Character:FindFirstChild("HumanoidRootPart") or p.Character:FindFirstChild("UpperTorso")
-            if torso then
-                local b = p.Character:FindFirstChild("ShadowEliteESP")
-                local h = p.Character:FindFirstChild("ShadowHighlight")
 
+    for _, p in pairs(_P:GetPlayers()) do
+        if p ~= _LP then
+            local char = p.Character
+            local torso = char and (char:FindFirstChild("Torso") or char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("UpperTorso"))
+            if torso then
+                local b = char:FindFirstChild("ShadowEliteESP")
+                local h = char:FindFirstChild("ShadowHighlight")
                 if Config.ESP or Config.ESPBox or Config.ESPTracer or Config.ESPChams then
                     if Config.TeamCheck and p.Team == _LP.Team then
                         if b then b.Enabled = false end
@@ -260,36 +283,26 @@ _RS.RenderStepped:Connect(function()
                     end
 
                     if not b then
-                        b = Instance.new("BillboardGui", p.Character); b.Name = "ShadowEliteESP"; b.AlwaysOnTop = true; b.Size = UDim2.new(4, 0, 5.5, 0); b.Adornee = torso
-                        local l = Instance.new("TextLabel", b); l.Name = "N"; l.Size = UDim2.new(1, 0, 0.4, 0); l.Position = UDim2.new(0, 0, -0.5, 0); l.BackgroundTransparency = 1; l.TextSize = 12; l.Font = Enum.Font.GothamBold; l.TextColor3 = Color3.new(1,1,1)
+                        b = Instance.new("BillboardGui", char); b.Name = "ShadowEliteESP"; b.AlwaysOnTop = true; b.Size = UDim2.new(4, 0, 5.5, 0); b.Adornee = torso;
+                        local l = Instance.new("TextLabel", b); l.Name = "N"; l.Size = UDim2.new(1, 0, 0.4, 0); l.Position = UDim2.new(0, 0, -0.5, 0); l.BackgroundTransparency = 1; l.TextSize = 12; l.Font = Enum.Font.GothamBold; l.TextColor3 = Color3.new(1,1,1);
                         local box = Instance.new("Frame", b); box.Name = "B"; box.Size = UDim2.new(1, 0, 1, 0); box.BackgroundTransparency = 1; local bs = Instance.new("UIStroke", box); bs.Thickness = 1
                     end
-                    if not h then
-                        h = Instance.new("Highlight", p.Character); h.Name = "ShadowHighlight"
+                    if not h then h = Instance.new("Highlight", char); h.Name = "ShadowHighlight" end
+
+                    b.Enabled = true; b.N.Visible = Config.ESP;
+                    if myRoot then
+                        b.N.Text = p.Name .. " [" .. math.floor((myRoot.Position - torso.Position).Magnitude) .. "m]"
+                    else
+                        b.N.Text = p.Name
                     end
-
-                    b.Enabled = true
-                    b.N.Visible = Config.ESP
-                    b.N.Text = p.Name .. " [" .. math.floor((_LP.Character.HumanoidRootPart.Position - torso.Position).Magnitude) .. "m]"
-                    b.N.TextColor3 = p.TeamColor.Color
-
-                    b.B.Visible = Config.ESPBox
-                    b.B.UIStroke.Color = p.TeamColor.Color
-
-                    h.Enabled = Config.ESPChams
-                    h.FillColor = p.TeamColor.Color
-                    h.OutlineColor = Color3.new(1,1,1)
+                    b.N.TextColor3 = p.TeamColor.Color; b.B.Visible = Config.ESPBox; b.B.UIStroke.Color = p.TeamColor.Color; h.Enabled = Config.ESPChams; h.FillColor = p.TeamColor.Color; h.OutlineColor = Color3.new(1,1,1)
 
                     local tr = Screen:FindFirstChild(p.Name.."_Tracer")
                     if Config.ESPTracer then
                         if not tr then tr = Instance.new("Frame", Screen); tr.Name = p.Name.."_Tracer"; tr.BorderSizePixel = 0; tr.AnchorPoint = Vector2.new(0.5, 0.5) end
                         local pos, on = _W.CurrentCamera:WorldToViewportPoint(torso.Position)
                         if on then
-                            local startPos = Vector2.new(_W.CurrentCamera.ViewportSize.X/2, _W.CurrentCamera.ViewportSize.Y)
-                            local endPos = Vector2.new(pos.X, pos.Y)
-                            local dist = (startPos - endPos).Magnitude
-                            tr.Visible = true; tr.Size = UDim2.new(0, 1, 0, dist); tr.Position = UDim2.new(0, (startPos.X + endPos.X)/2, 0, (startPos.Y + endPos.Y)/2)
-                            tr.Rotation = math.deg(math.atan2(endPos.Y - startPos.Y, endPos.X - startPos.X)) - 90; tr.BackgroundColor3 = p.TeamColor.Color
+                            local startPos = Vector2.new(_W.CurrentCamera.ViewportSize.X/2, _W.CurrentCamera.ViewportSize.Y); local endPos = Vector2.new(pos.X, pos.Y); local dist = (startPos - endPos).Magnitude; tr.Visible = true; tr.Size = UDim2.new(0, 1, 0, dist); tr.Position = UDim2.new(0, (startPos.X + endPos.X)/2, 0, (startPos.Y + endPos.Y)/2); tr.Rotation = math.deg(math.atan2(endPos.Y - startPos.Y, endPos.X - startPos.X)) - 90; tr.BackgroundColor3 = p.TeamColor.Color
                         else tr.Visible = false end
                     elseif tr then tr.Visible = false end
                 else
@@ -302,7 +315,13 @@ _RS.RenderStepped:Connect(function()
     end
 end)
 
+-- Cleanup on Player Removing
+_P.PlayerRemoving:Connect(function(p)
+    local tr = Screen:FindFirstChild(p.Name.."_Tracer")
+    if tr then tr:Destroy() end
+end)
+
 _RS.Stepped:Connect(function() if _LP.Character then for _, v in pairs(_LP.Character:GetDescendants()) do if v:IsA("BasePart") then v.CanCollide = not Config.Noclip end end end end)
 _UIS.JumpRequest:Connect(function() if Config.Jump and _LP.Character and _LP.Character:FindFirstChild("HumanoidRootPart") then _LP.Character.HumanoidRootPart.CFrame = _LP.Character.HumanoidRootPart.CFrame + Vector3.new(0, 5, 0) end end)
 
-print("[V27] ELITE SHADOW LOADED. R-SHIFT TO TOGGLE.")
+print("[V28] ELITE FUN SHADOW LOADED. R-SHIFT TO TOGGLE.")
