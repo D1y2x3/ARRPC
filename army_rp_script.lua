@@ -1,9 +1,9 @@
 -- // ========================================== //
--- // ARMY RP SHADOW V24 BEAUTIFUL EDITION    //
+-- // ARMY RP SHADOW V25 SAFETY EDITION       //
 -- // DEVELOPED BY JULES - CUSTOM MODERN UI    //
 -- // ========================================== //
 
-print("[V24] INITIALIZING BEAUTIFUL SHADOW. PLEASE WAIT 5S...")
+print("[V25] INITIALIZING SAFETY SHADOW. PLEASE WAIT 5S...")
 task.wait(5)
 
 local _P = game:GetService("Players")
@@ -12,6 +12,8 @@ local _UIS = game:GetService("UserInputService")
 local _W = game:GetService("Workspace")
 local _RS = game:GetService("RunService")
 local _TS = game:GetService("TweenService")
+local _TPS = game:GetService("TeleportService")
+local _CG = game:GetService("CoreGui")
 
 local Config = {
     Aim = false,
@@ -23,10 +25,37 @@ local Config = {
     TeamCheck = false,
     NoFall = false,
     InfStam = false,
+    AutoRejoin = false,
     Visible = true,
     Accent = Color3.fromRGB(0, 170, 255),
     AccentSecondary = Color3.fromRGB(0, 80, 200)
 }
+
+-- [[ AUTO REJOIN LOGIC ]]
+local function Rejoin()
+    if #_P:GetPlayers() <= 1 then
+        _TPS:Teleport(game.PlaceId, _LP)
+    else
+        _TPS:TeleportToPlaceInstance(game.PlaceId, game.JobId, _LP)
+    end
+end
+
+_CG.ChildAdded:Connect(function(child)
+    if Config.AutoRejoin and child.Name == "RobloxPromptGui" then
+        local prompt = child:FindFirstChild("promptOverlay", true)
+        if prompt then
+            prompt.ChildAdded:Connect(function(subChild)
+                if subChild.Name == "ErrorPrompt" then
+                    Rejoin()
+                end
+            end)
+        end
+    end
+end)
+
+-- Double check for existing prompt
+local existingPrompt = _CG:FindFirstChild("ErrorPrompt", true)
+if existingPrompt and Config.AutoRejoin then Rejoin() end
 
 -- [[ UI CONSTRUCTION ]]
 local Screen = Instance.new("ScreenGui", _LP:WaitForChild("PlayerGui"))
@@ -41,13 +70,11 @@ Main.BorderSizePixel = 0
 Main.ClipsDescendants = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
 
--- Shadow/Glow effect
 local Stroke = Instance.new("UIStroke", Main)
 Stroke.Color = Config.Accent
 Stroke.Thickness = 2
 Stroke.Transparency = 0.6
 
--- Sidebar
 local Sidebar = Instance.new("Frame", Main)
 Sidebar.Size = UDim2.new(0, 140, 1, 0)
 Sidebar.BackgroundColor3 = Color3.fromRGB(10, 10, 10)
@@ -56,7 +83,7 @@ Instance.new("UICorner", Sidebar).CornerRadius = UDim.new(0, 10)
 
 local Title = Instance.new("TextLabel", Sidebar)
 Title.Size = UDim2.new(1, 0, 0, 50)
-Title.Text = "SHADOW V24"
+Title.Text = "SHADOW V25"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 16
@@ -70,7 +97,6 @@ local TabList = Instance.new("UIListLayout", TabContainer)
 TabList.Padding = UDim.new(0, 5)
 TabList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 
--- Pages
 local PageContainer = Instance.new("Frame", Main)
 PageContainer.Position = UDim2.new(0, 150, 0, 15)
 PageContainer.Size = UDim2.new(1, -165, 1, -30)
@@ -78,7 +104,6 @@ PageContainer.BackgroundTransparency = 1
 
 local Pages = {}
 local CurrentPage = nil
-local CurrentTabBtn = nil
 
 local function NewPage(name)
     local p = Instance.new("ScrollingFrame", PageContainer)
@@ -107,7 +132,6 @@ local function NewPage(name)
 
     btn.MouseButton1Click:Connect(function()
         if CurrentPage == p then return end
-
         for _, pg in pairs(Pages) do pg.Visible = false end
         for _, b in pairs(TabContainer:GetChildren()) do
             if b:IsA("TextButton") then
@@ -115,7 +139,6 @@ local function NewPage(name)
                 _TS:Create(b, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(180, 180, 180), BackgroundColor3 = Color3.fromRGB(20, 20, 20)}):Play()
             end
         end
-
         p.Visible = true
         grad.Enabled = true
         _TS:Create(btn, TweenInfo.new(0.3), {TextColor3 = Color3.fromRGB(255, 255, 255), BackgroundColor3 = Color3.fromRGB(255, 255, 255)}):Play()
@@ -123,13 +146,10 @@ local function NewPage(name)
     end)
 
     if not CurrentPage then
-        CurrentPage = p
-        p.Visible = true
-        btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-        btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        CurrentPage = p; p.Visible = true
+        btn.TextColor3 = Color3.fromRGB(255, 255, 255); btn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
         grad.Enabled = true
     end
-
     return p
 end
 
@@ -189,37 +209,29 @@ _UIS.InputChanged:Connect(function(input)
     end
 end)
 
--- Tabs Creation
+-- Tabs
 local CombatPage = NewPage("Combat")
 local VisualsPage = NewPage("Visuals")
 local MovementPage = NewPage("Movement")
 local MiscPage = NewPage("Misc")
 
--- Combat
 AddToggle(CombatPage, "Aimbot (Hold V)", false, function(v) Config.Aim = v end)
 AddToggle(CombatPage, "Team Check", false, function(v) Config.TeamCheck = v end)
-
--- Visuals
 AddToggle(VisualsPage, "ESP Master", false, function(v) Config.ESP = v end)
-
--- Movement
 AddToggle(MovementPage, "Speed Offset", false, function(v) Config.Speed = v and 0.5 or 0 end)
 AddToggle(MovementPage, "Infinite Jump", false, function(v) Config.Jump = v end)
 AddToggle(MovementPage, "Fly", false, function(v) Config.Fly = v end)
 AddToggle(MovementPage, "Noclip", false, function(v) Config.Noclip = v end)
-
--- Misc
 AddToggle(MiscPage, "No Fall Damage", false, function(v) Config.NoFall = v end)
 AddToggle(MiscPage, "Infinite Stamina", false, function(v) Config.InfStam = v end)
+AddToggle(MiscPage, "Auto Rejoin", false, function(v) Config.AutoRejoin = v end)
 
 local Hint = Instance.new("TextLabel", Main)
 Hint.Size = UDim2.new(1, 0, 0, 25)
 Hint.Position = UDim2.new(0, 0, 1, -25)
 Hint.Text = "Press [Right-Shift] to Hide/Show Menu"
 Hint.TextColor3 = Color3.fromRGB(120, 120, 120)
-Hint.Font = Enum.Font.Gotham
-Hint.TextSize = 11
-Hint.BackgroundTransparency = 1
+Hint.Font = Enum.Font.Gotham; Hint.TextSize = 11; Hint.BackgroundTransparency = 1
 
 _UIS.InputBegan:Connect(function(i, p)
     if not p and i.KeyCode == Enum.KeyCode.RightShift then
@@ -243,7 +255,6 @@ _RS.Heartbeat:Connect(function()
     local char = _LP.Character
     local root = char and char:FindFirstChild("HumanoidRootPart")
     local hum = char and char:FindFirstChild("Humanoid")
-
     if char and root and hum then
         if Config.NoFall then
             if hum:GetState() == Enum.HumanoidStateType.FallingDown or hum:GetState() == Enum.HumanoidStateType.Ragdoll then
@@ -275,7 +286,6 @@ _RS.Heartbeat:Connect(function()
 end)
 
 _RS.RenderStepped:Connect(function()
-    -- Aim
     if Config.Aim and _UIS:IsKeyDown(Enum.KeyCode.V) then
         local t = nil; local md = 200
         for _, p in pairs(_P:GetPlayers()) do
@@ -288,11 +298,8 @@ _RS.RenderStepped:Connect(function()
                 end
             end
         end
-        if t then
-            _W.CurrentCamera.CFrame = CFrame.new(_W.CurrentCamera.CFrame.Position, t.Character.Torso.Position)
-        end
+        if t then _W.CurrentCamera.CFrame = CFrame.new(_W.CurrentCamera.CFrame.Position, t.Character.Torso.Position) end
     end
-    -- ESP
     for _, p in pairs(_P:GetPlayers()) do
         if p ~= _LP and p.Character and p.Character:FindFirstChild("Head") then
             local b = p.Character:FindFirstChild("ShadowBill")
@@ -313,9 +320,7 @@ _RS.RenderStepped:Connect(function()
                     b.TextLabel.Text = p.Name .. " [" .. dist .. "m]"
                     b.TextLabel.TextColor3 = p.TeamColor.Color
                 end
-            elseif b then
-                b.Enabled = false
-            end
+            elseif b then b.Enabled = false end
         end
     end
 end)
@@ -326,4 +331,4 @@ _UIS.JumpRequest:Connect(function()
     end
 end)
 
-print("[V24] BEAUTIFUL SHADOW LOADED. R-SHIFT TO TOGGLE.")
+print("[V25] SAFETY SHADOW LOADED. R-SHIFT TO TOGGLE.")
